@@ -1,0 +1,31 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.9"
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy src tests
+      - run: uv run pytest
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.9"
+      - run: docker build -t atlas-lyme-mcp:ci .
+      - run: docker run -d --name atlas-lyme-mcp -p 8000:8000 atlas-lyme-mcp:ci
+      - run: curl --fail --retry 12 --retry-delay 2 --retry-connrefused http://127.0.0.1:8000/healthz
+      - run: uv sync --locked && uv run python -m atlas_lyme_mcp.check_client
+      - run: docker inspect --format '{{.State.Running}}' atlas-lyme-mcp | grep true
+      - if: always()
+        run: docker logs atlas-lyme-mcp
