@@ -90,6 +90,41 @@ After remote SDK verification, add the following to the user-local `~/.cursor/mc
 
 In Cursor, confirm the server is connected and both tools appear. Ask it to call `server_status`, then `atlas_smoke_test` with no arguments. Expand the **actual MCP tool-call result** and capture its four fields and exact message. Correlate the call time with DigitalOcean run logs. Cursor's conversational summary does not prove remote invocation. Inspect Cursor's MCP Logs panel if connection or discovery fails.
 
+## Epic #4 UAT evidence
+
+On 2026-09-26, the user completed Cursor UAT against the configured `atlas-lyme-dev` server at `https://oh-lyme-mcp-dev-7jcfi.ondigitalocean.app/mcp`. Cursor reported the MCP namespace as `ready`. The recorded local clock after both calls was 17:12:28 MDT (23:12:28 UTC). The UAT record places `server_status` before 17:11:07 MDT and `atlas_smoke_test` after 17:11:07 MDT but before 17:12:28 MDT; it does not contain exact per-call timestamps.
+
+The UAT report's Cursor version sources disagreed: `cursor --version` and the installed package metadata reported 3.20.10, while two Windows uninstall registry entries reported 0.45.14 and 3.22.7. The report could not establish which registry entry belonged to the running Cursor process, so the running version is recorded as ambiguous.
+
+The expanded MCP tool-call results were:
+
+`server_status`:
+
+```json
+{
+  "service": "atlas-lyme-mcp",
+  "version": "0.1.0",
+  "status": "ok"
+}
+```
+
+`atlas_smoke_test`:
+
+```json
+{
+  "service": "atlas-lyme-mcp",
+  "version": "0.1.0",
+  "status": "ok",
+  "message": "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are pretending this was all part of the plan."
+}
+```
+
+The user-supplied report confirms both calls returned without invocation errors, all four smoke fields were present, the exact message matched, and Cursor did not switch servers. It also displayed an additional `mcp_auth` discovery entry, which was not invoked. Independent official-SDK discovery against the live endpoint returned only `atlas_smoke_test` and `server_status`; `mcp_auth` is not advertised by the Atlas MCP server.
+
+DigitalOcean run logs show successful `/mcp` HTTP activity at 2026-09-26 23:11:15Z and 23:12:02Z (17:11:15 and 17:12:02 MDT), overlapping the reported smoke-call interval. The access logs record request paths and HTTP statuses, not MCP tool names, and the UAT report does not timestamp each tool result exactly; therefore they corroborate remote MCP traffic during UAT but cannot attribute an individual log line to a named tool. No 421 or 403 responses, transport errors, crashes, or startup failures appeared in the inspected recent log window.
+
+After the UAT, the repository's official Python MCP SDK check client was run against the same URL. It initialized successfully, listed exactly `atlas_smoke_test` and `server_status`, invoked both, and asserted the expected structured values and exact smoke message. A fresh HTTPS health request returned HTTP 200 with successful TLS certificate verification. App Platform remained `ACTIVE` on source commit `8c2d3ecde0b875056a8486feea44a80050a02d8e`.
+
 ## Troubleshooting and redeployment
 
 - `/healthz` succeeds but `/mcp` returns 421: inspect the public Host and resolved `MCP_ALLOWED_HOSTS`; allowlist only observed expected forms.
