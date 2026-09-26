@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 
 from atlas_lyme_mcp import __version__
 from atlas_lyme_mcp.config import Settings
-from atlas_lyme_mcp.tools.system import server_status
+from atlas_lyme_mcp.tools.system import atlas_smoke_test, server_status
 
 
 def create_server(settings: Settings | None = None) -> MCPServer:
@@ -17,6 +17,7 @@ def create_server(settings: Settings | None = None) -> MCPServer:
     settings = settings or Settings.from_env()
     mcp = MCPServer("atlas-lyme-mcp", version=__version__)
     mcp.tool()(server_status)
+    mcp.tool()(atlas_smoke_test)
 
     @mcp.custom_route("/healthz", methods=["GET"])  # type: ignore[untyped-decorator]
     async def healthz(_request: Request) -> JSONResponse:
