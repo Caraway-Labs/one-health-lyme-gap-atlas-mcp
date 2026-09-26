@@ -7,7 +7,7 @@ from starlette.testclient import TestClient
 
 from atlas_lyme_mcp.config import Settings
 from atlas_lyme_mcp.server import create_app, create_server
-from atlas_lyme_mcp.tools.system import server_status
+from atlas_lyme_mcp.tools.system import SMOKE_MESSAGE, atlas_smoke_test, server_status
 
 
 def test_config_defaults(monkeypatch: object) -> None:
@@ -39,6 +39,25 @@ def test_application_and_health() -> None:
 
 def test_operational_capability() -> None:
     assert server_status() == {"service": "atlas-lyme-mcp", "version": "0.1.0", "status": "ok"}
+    assert atlas_smoke_test() == {
+        "service": "atlas-lyme-mcp",
+        "version": "0.1.0",
+        "status": "ok",
+        "message": SMOKE_MESSAGE,
+    }
+    assert SMOKE_MESSAGE == (
+        "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are "
+        "pretending this was all part of the plan."
+    )
+
+
+def test_unlisted_host_is_rejected_by_mcp() -> None:
+    settings = Settings(allowed_hosts=("mcp.example.org", "mcp.example.org:*"))
+    with TestClient(create_app(settings), base_url="https://mcp.example.org") as client:
+        allowed = client.post("/mcp", json={})
+        rejected = client.post("/mcp", json={}, headers={"Host": "other.example.org"})
+    assert allowed.status_code != 421
+    assert rejected.status_code == 421
 
 
 def test_import_has_no_process_side_effect() -> None:
