@@ -2,6 +2,8 @@
 
 An agent-facing Model Context Protocol server for Atlas. This development service exposes only the operational `server_status` and `atlas_smoke_test` tools; it contains no Lyme data or risk logic. REST and MCP are peer adapters: future tools may execute approved portable shared-domain logic locally and must call approved Atlas APIs/services when they need governed data or service-owned behavior. See [ADR 0002](docs/adr/0002-mcp-peer-adapter-boundaries.md) for the decision checklist.
 
+The direct `one-health-lyme-gap-atlas-shared` dependency uses the portable base distribution at commit `83ccbe76047185f6aacaff551afd8b03d88aa5cf` (source version `1.0.0`), pinned in `pyproject.toml` and `uv.lock`. No `snowflake`, `observability`, or `legacy` extra is requested. Production imports are limited to `lyme_gap_atlas_shared.domain`; architecture tests guard this boundary. The existing operational tools do not expose Atlas domain data.
+
 ## Prerequisites and local setup
 
 Install Python 3.12, [uv](https://docs.astral.sh/uv/), and Docker for container use. From this repository:

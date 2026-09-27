@@ -2,12 +2,19 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [project]
 name = "atlas-lyme-mcp"
 version = "0.1.0"
 description = "Agent-facing MCP interface for the One Health Lyme Gap Atlas"
 requires-python = ">=3.12,<3.13"
-dependencies = ["mcp>=2.2,<3", "uvicorn>=0.35,<1"]
+dependencies = [
+    "mcp>=2.2,<3",
+    "one-health-lyme-gap-atlas-shared @ git+https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-shared-python.git@83ccbe76047185f6aacaff551afd8b03d88aa5cf",
+    "uvicorn>=0.35,<1",
+]
 
 [dependency-groups]
 dev = ["httpx>=0.28,<1", "mypy>=1.17,<2", "pytest>=8,<10", "ruff>=0.12,<1"]
