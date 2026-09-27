@@ -4,6 +4,8 @@ An agent-facing Model Context Protocol server for Atlas. This development servic
 
 The direct `one-health-lyme-gap-atlas-shared` dependency uses the portable base distribution at commit `83ccbe76047185f6aacaff551afd8b03d88aa5cf` (source version `1.0.0`), pinned in `pyproject.toml` and `uv.lock`. No `snowflake`, `observability`, or `legacy` extra is requested. Production imports are limited to `lyme_gap_atlas_shared.domain`; architecture tests guard this boundary. The existing operational tools do not expose Atlas domain data.
 
+The existing operational tools use thin `tools/` adapters over independently testable `application/` functions. The [future-tool checklist](docs/future-tool-template.md) defines where shared pure logic and a future approved service client belong; no domain client or data request is active today.
+
 ## Prerequisites and local setup
 
 Install Python 3.12, [uv](https://docs.astral.sh/uv/), and Docker for container use. From this repository:
