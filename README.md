@@ -1,6 +1,6 @@
 # One Health Lyme Gap Atlas MCP
 
-An agent-facing Model Context Protocol server for Atlas. This development service exposes only the operational `server_status` and `atlas_smoke_test` tools; it contains no Lyme data or risk logic. Future domain tools should call approved Atlas APIs/services, leaving business rules and governed persistence in their owning repositories.
+An agent-facing Model Context Protocol server for Atlas. This development service exposes only the operational `server_status` and `atlas_smoke_test` tools; it contains no Lyme data or risk logic. REST and MCP are peer adapters: future tools may execute approved portable shared-domain logic locally and must call approved Atlas APIs/services when they need governed data or service-owned behavior. See [ADR 0002](docs/adr/0002-mcp-peer-adapter-boundaries.md) for the decision checklist.
 
 ## Prerequisites and local setup
 
