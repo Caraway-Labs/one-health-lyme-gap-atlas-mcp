@@ -1,5 +1,8 @@
 name: oh-lyme-mcp-dev
 region: sfo
+domains:
+  - domain: mcp.onehealthatlas.org
+    type: ALIAS
 alerts:
   - rule: DEPLOYMENT_FAILED
 services:
@@ -27,5 +30,5 @@ services:
         value: "8000"
         scope: RUN_TIME
       - key: MCP_ALLOWED_HOSTS
-        value: "${APP_DOMAIN},${APP_DOMAIN}:*"
+        value: "oh-lyme-mcp-dev-7jcfi.ondigitalocean.app,oh-lyme-mcp-dev-7jcfi.ondigitalocean.app:443,mcp.onehealthatlas.org,mcp.onehealthatlas.org:443"
         scope: RUN_TIME

@@ -10,9 +10,30 @@ App Platform builds the repository `Dockerfile` from reviewed `main` with automa
 | --- | --- | --- |
 | `HOST` | `0.0.0.0` | Accept App Platform ingress inside the container |
 | `PORT` | `8000` | Match Dockerfile and `http_port` |
-| `MCP_ALLOWED_HOSTS` | `${APP_DOMAIN},${APP_DOMAIN}:*` | Allow only the generated public Host and its optional port form |
+| `MCP_ALLOWED_HOSTS` | `oh-lyme-mcp-dev-7jcfi.ondigitalocean.app,oh-lyme-mcp-dev-7jcfi.ondigitalocean.app:443,mcp.onehealthatlas.org,mcp.onehealthatlas.org:443` | Exact starter and branded Hosts, with optional HTTPS port; no wildcards |
 
-DigitalOcean expands `${APP_DOMAIN}` at runtime. Do not commit a token, add wildcard Hosts, disable SDK transport protection, or assume the server URL is a client's `Origin`. Requests with no `Origin` are valid. If an actual client receives HTTP 403, inspect the request's Origin and runtime log, confirm it is expected, then add only that exact Origin through a reviewed code/configuration change and tests. `/healthz` may work when `/mcp` fails Host validation, so check both.
+Keep the starter hostname explicit so a change to DigitalOcean's primary domain cannot remove its Host allowance. Do not commit a token, add wildcard Hosts, disable SDK transport protection, or assume the server URL is a client's `Origin`. Requests with no `Origin` are valid. If an actual client receives HTTP 403, inspect the request's Origin and runtime log, confirm it is expected, then add only that exact Origin through a reviewed code/configuration change and tests. `/healthz` may work when `/mcp` fails Host validation, so check both.
+
+## Branded hostname rollout (Web #356)
+
+The owner approved publication of this existing smoke-test service on 2026-10-10.
+Add `mcp.onehealthatlas.org` to the existing app, retaining its starter ingress
+and routing. DigitalOcean's validator promotes the first custom domain from
+ALIAS to PRIMARY; this does not configure a starter-domain redirect. Always
+patch the full live spec rather than replace it with the repository template.
+
+The owner enters a Squarespace CNAME: name `mcp`, data
+`oh-lyme-mcp-dev-7jcfi.ondigitalocean.app`, with no scheme or path. Confirm
+DigitalOcean's live alias before entry and review the owner's screenshot before
+Save. DNS/TLS completion remains pending until independently verified.
+
+After Save, inspect authoritative/public DNS, DigitalOcean domain validation,
+and a hostname-valid managed certificate. Run `/healthz` and the official SDK
+check client on both hosts; verify only the existing two tools and their exact
+outputs. Test unexpected Hosts and ports remain rejected. Compare live spec
+against its pre-change snapshot: only domains and `MCP_ALLOWED_HOSTS` may differ.
+Record deployment ID/SHA, results and logs in Web #356; close it only after all
+checks pass, leaving #353 open. Owner review is required before merging this PR.
 
 ## Local preflight
 

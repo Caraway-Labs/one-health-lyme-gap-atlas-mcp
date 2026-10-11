@@ -36,6 +36,12 @@ In another shell, check `http://127.0.0.1:8000/healthz`, run the client command 
 
 ## Configuration
 
+Web [#356](https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-web/issues/356)
+authorizes the additive hostname `https://mcp.onehealthatlas.org/mcp` for this
+existing smoke-test service. DNS and managed TLS verification are pending;
+retain `https://oh-lyme-mcp-dev-7jcfi.ondigitalocean.app/mcp` throughout rollout.
+This publication does not change the tools or authentication behavior.
+
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `HOST` | `0.0.0.0` | ASGI bind address |
