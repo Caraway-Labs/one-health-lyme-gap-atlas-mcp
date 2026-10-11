@@ -3,6 +3,7 @@
 import importlib
 from unittest.mock import patch
 
+import pytest
 from starlette.testclient import TestClient
 
 from atlas_lyme_mcp.config import Settings
@@ -66,3 +67,43 @@ def test_import_has_no_process_side_effect() -> None:
 
         importlib.reload(module)
     run.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "host,expected",
+    [
+        ("mcp.example.org", 200),
+        ("mcp.example.org:443", 200),
+        ("legacy.example.org", 200),
+        ("legacy.example.org:443", 200),
+        ("other.example.org", 421),
+        ("child.mcp.example.org", 421),
+        ("mcp.example.org:444", 421),
+    ],
+)
+def test_additive_exact_hosts(host: str, expected: int) -> None:
+    settings = Settings(
+        allowed_hosts=(
+            "mcp.example.org",
+            "mcp.example.org:443",
+            "legacy.example.org",
+            "legacy.example.org:443",
+        )
+    )
+    payload = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-11-25",
+            "capabilities": {},
+            "clientInfo": {"name": "host-check", "version": "1"},
+        },
+    }
+    with TestClient(create_app(settings)) as client:
+        response = client.post(
+            "/mcp",
+            json=payload,
+            headers={"Host": host, "Accept": "application/json, text/event-stream"},
+        )
+    assert response.status_code == expected
