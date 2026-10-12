@@ -8,6 +8,7 @@ import httpx
 import pytest
 from jsonschema import Draft202012Validator
 from jsonschema import ValidationError as SchemaError
+from mcp import Client
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from mcp_types import CallToolResult
@@ -111,6 +112,31 @@ def test_overall_arguments_are_strict() -> None:
         )
     with pytest.raises(ValidationError):
         GeographyArguments.model_validate({"geographies": '[{"county_fips":"16001"}]'})
+
+
+def test_official_sdk_discovery_and_invocation() -> None:
+    async def check() -> None:
+        server = MCPServer("test", tools=[geography_tool(resolver())])
+        async with Client(server, mode="legacy") as client:
+            tools = (await client.list_tools()).tools
+            assert [tool.name for tool in tools] == ["atlas_resolve_geographies"]
+            result = await client.call_tool(
+                "atlas_resolve_geographies",
+                {
+                    "geographies": [
+                        {"county": "Ada", "state": "Idaho"},
+                        {"county": "Valley", "state": "ID"},
+                    ]
+                },
+            )
+            assert not result.is_error and result.structured_content
+            assert [
+                r["geography"]["county_fips"] for r in result.structured_content["results"]
+            ] == ["16001", "16085"]
+            invalid = await client.call_tool("atlas_resolve_geographies", {"geographies": []})
+            assert invalid.is_error
+
+    asyncio.run(check())
 
 
 def test_mixed_success_unknown_states_counties_fips() -> None:
