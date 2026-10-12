@@ -11,9 +11,11 @@ from starlette.responses import JSONResponse
 
 from atlas_lyme_mcp import __version__
 from atlas_lyme_mcp.application.client import AtlasClient
+from atlas_lyme_mcp.application.geographies import GeographyResolver
 from atlas_lyme_mcp.config import Settings
 from atlas_lyme_mcp.protection import PublicProtection
 from atlas_lyme_mcp.tools.evidence import EvidenceTools
+from atlas_lyme_mcp.tools.geographies import geography_tool
 from atlas_lyme_mcp.tools.system import atlas_smoke_test, server_status
 
 
@@ -26,7 +28,8 @@ def create_server(settings: Settings | None = None, client: AtlasClient | None =
     mcp = MCPServer(
         "atlas-lyme-mcp",
         version=__version__,
-        tools=EvidenceTools(client or AtlasClient(settings.api_origin)).registered(),
+        tools=EvidenceTools(client or AtlasClient(settings.api_origin)).registered()
+        + [geography_tool(GeographyResolver())],
     )
     mcp.tool()(server_status)
     mcp.tool()(atlas_smoke_test)

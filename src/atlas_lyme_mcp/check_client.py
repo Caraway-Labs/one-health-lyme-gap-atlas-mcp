@@ -22,6 +22,7 @@ async def check() -> None:
             "atlas_discover_indicators",
             "atlas_get_county_profile",
             "atlas_get_evidence_provenance",
+            "atlas_resolve_geographies",
         }
         if names != expected_names:
             raise RuntimeError(f"Unexpected tool list: {sorted(names)}")

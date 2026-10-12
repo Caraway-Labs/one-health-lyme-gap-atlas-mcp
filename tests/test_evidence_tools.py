@@ -47,6 +47,7 @@ def test_all_tools_have_strict_input_and_canonical_output_schemas() -> None:
         "atlas_discover_indicators",
         "atlas_get_county_profile",
         "atlas_get_evidence_provenance",
+        "atlas_resolve_geographies",
     }
     for tool in tools:
         if tool.name.startswith("atlas_") and tool.name != "atlas_smoke_test":
