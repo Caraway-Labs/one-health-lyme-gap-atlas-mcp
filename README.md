@@ -1,10 +1,10 @@
 # One Health Lyme Gap Atlas MCP
 
-An agent-facing Model Context Protocol server for Atlas. This development service exposes only the operational `server_status` and `atlas_smoke_test` tools; it contains no Lyme data or risk logic. REST and MCP are peer adapters: future tools may execute approved portable shared-domain logic locally and must call approved Atlas APIs/services when they need governed data or service-owned behavior. See [ADR 0002](docs/adr/0002-mcp-peer-adapter-boundaries.md) for the decision checklist.
+An agent-facing Model Context Protocol server for Atlas. The service exposes anonymous read-only indicator discovery, bounded county evidence profiles and source/methodology resolution, alongside `server_status` and `atlas_smoke_test`. Strict FIPS validation executes shared-domain logic locally; governed retrieval crosses the approved public API boundary. No scoring, inference, database access or private API is available. See [the tool contract](docs/public-evidence-tools.md). REST and MCP are peer adapters: future tools may execute approved portable shared-domain logic locally and must call approved Atlas APIs/services when they need governed data or service-owned behavior. See [ADR 0002](docs/adr/0002-mcp-peer-adapter-boundaries.md) for the decision checklist.
 
 The direct `one-health-lyme-gap-atlas-shared` dependency uses the portable base distribution at commit `83ccbe76047185f6aacaff551afd8b03d88aa5cf` (source version `1.0.0`), pinned in `pyproject.toml` and `uv.lock`. No `snowflake`, `observability`, or `legacy` extra is requested. Production imports are limited to `lyme_gap_atlas_shared.domain`; architecture tests guard this boundary. The existing operational tools do not expose Atlas domain data.
 
-The existing operational tools use thin `tools/` adapters over independently testable `application/` functions. The [future-tool checklist](docs/future-tool-template.md) defines where shared pure logic and a future approved service client belong; no domain client or data request is active today.
+The existing operational tools use thin `tools/` adapters over independently testable `application/` functions. The [future-tool checklist](docs/future-tool-template.md) defines where shared pure logic and a future approved service client belong; the approved public-service client now supplies bounded evidence retrieval.
 
 ## Prerequisites and local setup
 
@@ -23,7 +23,7 @@ To prove MCP discovery and invocation with the official Python SDK, leave the se
 uv run python -m atlas_lyme_mcp.check_client
 ```
 
-This client initializes Streamable HTTP, discovers `server_status` and `atlas_smoke_test`, invokes both, and asserts their structured responses. The no-argument smoke tool returns `service`, `version`, `status`, and the exact message: "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are pretending this was all part of the plan." It is a deterministic, data-free deployment proof, not a Lyme surveillance capability. Set `MCP_URL=https://<host>/mcp` to check a deployed instance. MCP Inspector can also connect to the local endpoint. No stdio entry point is configured.
+This client initializes Streamable HTTP, discovers all five registered tools, invokes both operational tools, and asserts their structured responses. The no-argument smoke tool returns `service`, `version`, `status`, and the exact message: "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are pretending this was all part of the plan." It is a deterministic, data-free deployment proof, not a Lyme surveillance capability. Set `MCP_URL=https://<host>/mcp` to check a deployed instance. MCP Inspector can also connect to the local endpoint. No stdio entry point is configured.
 
 ## Container
 
@@ -38,7 +38,7 @@ In another shell, check `http://127.0.0.1:8000/healthz`, run the client command 
 
 Web [#356](https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-web/issues/356)
 authorizes the additive hostname `https://mcp.onehealthatlas.org/mcp` for this
-existing smoke-test service. DNS and managed TLS verification are pending;
+existing MCP service. Verify DNS and managed TLS during each release acceptance;
 retain `https://oh-lyme-mcp-dev-7jcfi.ondigitalocean.app/mcp` throughout rollout.
 This publication does not change the tools or authentication behavior.
 

@@ -16,7 +16,13 @@ async def check() -> None:
             raise RuntimeError("MCP initialization did not negotiate a protocol version")
         tools = await client.list_tools()
         names = {tool.name for tool in tools.tools}
-        expected_names = {"server_status", "atlas_smoke_test"}
+        expected_names = {
+            "server_status",
+            "atlas_smoke_test",
+            "atlas_discover_indicators",
+            "atlas_get_county_profile",
+            "atlas_get_evidence_provenance",
+        }
         if names != expected_names:
             raise RuntimeError(f"Unexpected tool list: {sorted(names)}")
 
