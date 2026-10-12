@@ -1,5 +1,7 @@
 """ASGI construction and process entry point."""
 
+import logging
+
 import uvicorn
 from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
@@ -8,14 +10,24 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from atlas_lyme_mcp import __version__
+from atlas_lyme_mcp.application.client import AtlasClient
 from atlas_lyme_mcp.config import Settings
+from atlas_lyme_mcp.protection import PublicProtection
+from atlas_lyme_mcp.tools.evidence import EvidenceTools
 from atlas_lyme_mcp.tools.system import atlas_smoke_test, server_status
 
 
-def create_server(settings: Settings | None = None) -> MCPServer:
+def create_server(settings: Settings | None = None, client: AtlasClient | None = None) -> MCPServer:
     """Create an MCP server without starting a listener."""
     settings = settings or Settings.from_env()
-    mcp = MCPServer("atlas-lyme-mcp", version=__version__)
+    # SDK configures INFO logging; HTTP client URLs include arguments/cursors.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("mcp.server.transport_security").setLevel(logging.ERROR)
+    mcp = MCPServer(
+        "atlas-lyme-mcp",
+        version=__version__,
+        tools=EvidenceTools(client or AtlasClient(settings.api_origin)).registered(),
+    )
     mcp.tool()(server_status)
     mcp.tool()(atlas_smoke_test)
 
@@ -32,9 +44,14 @@ def create_app(settings: Settings | None = None) -> Starlette:
     security = None
     if settings.allowed_hosts:
         security = TransportSecuritySettings(allowed_hosts=list(settings.allowed_hosts))
-    return create_server(settings).streamable_http_app(
-        json_response=True, stateless_http=True, transport_security=security
+    app = create_server(settings).streamable_http_app(
+        json_response=True,
+        stateless_http=True,
+        transport_security=security,
+        max_request_body_size=16 * 1024,
     )
+    app.add_middleware(PublicProtection)
+    return app
 
 
 def main() -> None:

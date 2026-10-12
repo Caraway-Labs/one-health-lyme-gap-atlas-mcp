@@ -1,6 +1,6 @@
 # DigitalOcean MCP development deployment
 
-This runbook covers Epic #4's public, unauthenticated **development smoke test**. The server exposes only `server_status` and `atlas_smoke_test`. It has no Atlas data or database connections, persistence, or write tools. Its public URL is an App Platform-generated HTTPS hostname. Authentication and production use require a separate decision.
+This runbook retains Epic #4 foundation receipts and the existing release procedure. ADR 0003 now authorizes three anonymous read-only public evidence tools in this same service; see [the current contract](../public-evidence-tools.md). Database connections, private APIs, inference and writes remain excluded. Use both branded and starter HTTPS endpoints.
 
 ## Architecture and configuration
 
@@ -29,7 +29,7 @@ Save. DNS/TLS completion remains pending until independently verified.
 
 After Save, inspect authoritative/public DNS, DigitalOcean domain validation,
 and a hostname-valid managed certificate. Run `/healthz` and the official SDK
-check client on both hosts; verify only the existing two tools and their exact
+check client on both hosts; verify all five registered tools and the operational tools' exact
 outputs. Test unexpected Hosts and ports remain rejected. Compare live spec
 against its pre-change snapshot: only domains and `MCP_ALLOWED_HOSTS` may differ.
 Record deployment ID/SHA, results and logs in Web #356; close it only after all

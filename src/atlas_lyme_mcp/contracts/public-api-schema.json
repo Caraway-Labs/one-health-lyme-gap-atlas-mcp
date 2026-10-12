@@ -1,0 +1,1774 @@
+{
+  "api_commit": "31d9bad3b2274a5ef5ed3cffc6ba113fec03e53b",
+  "openapi_sha256": "566c12007b9c4e23e3cf7a3518a2ec6a0071b1800b05a7ff65c7cb77dcd759f2",
+  "components": {
+    "schemas": {
+      "CollectionEnvelope_Indicator_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Indicator"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CollectionMeta"
+          },
+          "links": {
+            "$ref": "#/components/schemas/CollectionLinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta",
+          "links"
+        ],
+        "title": "CollectionEnvelope[Indicator]"
+      },
+      "Indicator": {
+        "properties": {
+          "indicator_id": {
+            "type": "string",
+            "title": "Indicator Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "measure_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Measure Ids"
+          },
+          "semantic_version": {
+            "type": "string",
+            "title": "Semantic Version",
+            "description": "Governed semantic contract version, separate from HTTP V1 and application version."
+          },
+          "release_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Version",
+            "description": "Governed current-release relationship version."
+          },
+          "domain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Governed interpretation limitations; preserve alongside values and versions."
+          },
+          "standards_mappings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardsMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Mappings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "indicator_id",
+          "label",
+          "definition",
+          "measure_ids",
+          "semantic_version"
+        ],
+        "title": "Indicator"
+      },
+      "StandardsMapping": {
+        "properties": {
+          "standard": {
+            "type": "string",
+            "title": "Standard"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "target": {
+            "type": "string",
+            "title": "Target"
+          },
+          "relationship": {
+            "type": "string",
+            "title": "Relationship"
+          },
+          "mapping_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Reference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "standard",
+          "version",
+          "target",
+          "relationship"
+        ],
+        "title": "StandardsMapping"
+      },
+      "CollectionMeta": {
+        "properties": {
+          "next_page_token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Token",
+            "description": "Opaque query/release-bound continuation. Null means exhaustion; tokens may expire on restart."
+          },
+          "response_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Response At",
+            "description": "UTC response construction time; not source freshness or observation time."
+          }
+        },
+        "type": "object",
+        "title": "CollectionMeta"
+      },
+      "CollectionLinks": {
+        "properties": {
+          "self": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Self"
+          }
+        },
+        "type": "object",
+        "title": "CollectionLinks"
+      },
+      "CollectionEnvelope_Measure_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Measure"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CollectionMeta"
+          },
+          "links": {
+            "$ref": "#/components/schemas/CollectionLinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta",
+          "links"
+        ],
+        "title": "CollectionEnvelope[Measure]"
+      },
+      "Measure": {
+        "properties": {
+          "measure_id": {
+            "type": "string",
+            "title": "Measure Id"
+          },
+          "indicator_id": {
+            "type": "string",
+            "title": "Indicator Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "definition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "semantic_version": {
+            "type": "string",
+            "title": "Semantic Version",
+            "description": "Governed semantic contract version, separate from HTTP V1 and application version."
+          },
+          "release_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Version",
+            "description": "Governed current-release relationship version."
+          },
+          "measure_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Measure Type"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "denominator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Denominator",
+            "description": "Governed denominator; null means it is not supplied and must not be inferred."
+          },
+          "geography_types": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GeographyType"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geography Types"
+          },
+          "temporal_grains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporal Grains"
+          },
+          "geography_semantics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Geography Semantics"
+          },
+          "temporal_semantics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temporal Semantics"
+          },
+          "allowed_value_states": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ValueState"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Value States"
+          },
+          "allowed_strata": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Strata"
+          },
+          "missingness_semantics": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missingness Semantics"
+          },
+          "methodology_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology Id",
+            "description": "Exact governed methodology resource ID; null when not governed."
+          },
+          "methodology": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology"
+          },
+          "source_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Ids"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Governed interpretation limitations; preserve alongside values and versions."
+          },
+          "standards_mappings": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/StandardsMapping"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standards Mappings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "measure_id",
+          "indicator_id",
+          "label",
+          "definition",
+          "semantic_version"
+        ],
+        "title": "Measure"
+      },
+      "GeographyType": {
+        "type": "string",
+        "enum": [
+          "county",
+          "state"
+        ],
+        "title": "GeographyType"
+      },
+      "ValueState": {
+        "type": "string",
+        "enum": [
+          "OBSERVED",
+          "ZERO",
+          "MISSING",
+          "SUPPRESSED",
+          "UNAVAILABLE",
+          "NO_COUNTY_LINKED_RECORD",
+          "NO_RECORDS"
+        ],
+        "title": "ValueState",
+        "description": "Public V1 states, including the governed county status added by API #54."
+      },
+      "CollectionEnvelope_Observation_": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/Observation"
+            },
+            "type": "array",
+            "title": "Data"
+          },
+          "meta": {
+            "$ref": "#/components/schemas/CollectionMeta"
+          },
+          "links": {
+            "$ref": "#/components/schemas/CollectionLinks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data",
+          "meta",
+          "links"
+        ],
+        "title": "CollectionEnvelope[Observation]"
+      },
+      "Observation": {
+        "properties": {
+          "metadata_revision_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata Revision Id",
+            "description": "Reviewed consumer-safe metadata revision; not private lineage."
+          },
+          "observation_id": {
+            "type": "string",
+            "title": "Observation Id",
+            "description": "Stable observation identity and compact provenance reference."
+          },
+          "measure_id": {
+            "type": "string",
+            "title": "Measure Id"
+          },
+          "geography": {
+            "$ref": "#/components/schemas/GeographyIdentity"
+          },
+          "period_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Period Start",
+            "description": "Inclusive start of the governed observation period."
+          },
+          "period_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Period End",
+            "description": "Inclusive end of the governed observation period."
+          },
+          "temporal_grain": {
+            "type": "string",
+            "title": "Temporal Grain"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value",
+            "description": "Read with value_state and unit; null never means zero."
+          },
+          "value_state": {
+            "$ref": "#/components/schemas/ValueState",
+            "description": "OBSERVED is nonzero; ZERO is numeric zero; MISSING/SUPPRESSED/UNAVAILABLE require null; NO_COUNTY_LINKED_RECORD retains the literal no_county_linked_record; NO_RECORDS retains CDC's No records. Neither establishes biological absence."
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "denominator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Denominator",
+            "description": "Governed denominator; null means it is not supplied and must not be inferred."
+          },
+          "strata": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Strata"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id",
+            "description": "Public source resource key; distinct from lineage_source_id and dataset_id."
+          },
+          "lineage_source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lineage Source Id"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "methodology_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology Id",
+            "description": "Exact governed methodology resource ID; null when not governed."
+          },
+          "methodology": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology"
+          },
+          "release_methodology_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Methodology Version"
+          },
+          "methodology_version": {
+            "type": "string",
+            "title": "Methodology Version",
+            "description": "Transformation version, distinct from methodology resource version."
+          },
+          "semantic_version": {
+            "type": "string",
+            "title": "Semantic Version",
+            "description": "Governed semantic contract version, separate from HTTP V1 and application version."
+          },
+          "release_id": {
+            "type": "string",
+            "title": "Release Id",
+            "description": "Governed release identity for reproducibility."
+          },
+          "provenance_ref": {
+            "type": "string",
+            "title": "Provenance Ref",
+            "description": "Structured observation provenance identity; not a literature citation."
+          },
+          "source_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Label"
+          },
+          "source_vintage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Vintage"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "source_published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Published At",
+            "description": "Publisher timestamp when governed; null is not inferred freshness."
+          },
+          "atlas_acquired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atlas Acquired At",
+            "description": "Atlas acquisition time when governed; distinct from source publication and processing."
+          },
+          "atlas_processed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atlas Processed At",
+            "description": "Atlas processing time when governed; distinct from response time."
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Governed interpretation limitations; preserve alongside values and versions."
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/EvidenceReference"
+          },
+          "environmental_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnvironmentalContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present only for reviewed environmental context. DECIMAL quantities may use exact numeric strings; native DOUBLE remains a JSON number."
+          },
+          "surveillance_context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurveillanceContext"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Only supplied through an admitted Data release/bundle and supported slice. Omitted or null carries no evidence-state, comparability or lag claim. Comparison is case-definition scope only; alignment is descriptive, not causal."
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation_id",
+          "measure_id",
+          "geography",
+          "period_start",
+          "period_end",
+          "temporal_grain",
+          "value",
+          "value_state",
+          "unit",
+          "denominator",
+          "source_id",
+          "methodology_id",
+          "methodology_version",
+          "semantic_version",
+          "release_id",
+          "provenance_ref",
+          "limitations",
+          "evidence"
+        ],
+        "title": "Observation"
+      },
+      "GeographyIdentity": {
+        "properties": {
+          "geography_type": {
+            "$ref": "#/components/schemas/GeographyType"
+          },
+          "geography_id": {
+            "type": "string",
+            "title": "Geography Id",
+            "description": "FIPS string with leading zeros: five digits for counties, two for states."
+          }
+        },
+        "type": "object",
+        "required": [
+          "geography_type",
+          "geography_id"
+        ],
+        "title": "GeographyIdentity",
+        "description": "Stable FIPS join identity, independent of display or analysis polygons."
+      },
+      "EvidenceReference": {
+        "properties": {
+          "resource_type": {
+            "type": "string",
+            "title": "Resource Type"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "Resource Id"
+          },
+          "source_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Id",
+            "description": "Public source resource key; distinct from lineage_source_id and dataset_id."
+          },
+          "provenance_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provenance Ref",
+            "description": "Structured observation provenance identity; not a literature citation."
+          },
+          "semantic_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Semantic Version",
+            "description": "Governed semantic contract version, separate from HTTP V1 and application version."
+          },
+          "methodology_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Methodology Version",
+            "description": "Transformation version, distinct from methodology resource version."
+          },
+          "release_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Id",
+            "description": "Governed release identity for reproducibility."
+          },
+          "uri": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uri"
+          }
+        },
+        "type": "object",
+        "required": [
+          "resource_type",
+          "resource_id"
+        ],
+        "title": "EvidenceReference"
+      },
+      "EnvironmentalContext": {
+        "properties": {
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "COMPLETE",
+              "PARTIAL_COVERAGE",
+              "SOURCE_MISSING",
+              "OUT_OF_SOURCE_COVERAGE"
+            ],
+            "title": "Coverage Status"
+          },
+          "source_time_present": {
+            "type": "boolean",
+            "title": "Source Time Present"
+          },
+          "day_convention": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Day Convention",
+            "description": "Publisher labeled 24-hour period, not a midnight calendar day."
+          },
+          "expected_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Area M2"
+          },
+          "intersected_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intersected Area M2"
+          },
+          "source_supported_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Supported Area M2"
+          },
+          "valid_area_m2": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Area M2"
+          },
+          "source_coverage_fraction": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Coverage Fraction",
+            "description": "Monthly source-supported/legal county area; separate from daily completeness."
+          },
+          "valid_fraction_of_supported_area": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Fraction Of Supported Area",
+            "description": "Daily valid/source-supported area; completeness threshold 0.95."
+          },
+          "upstream_date_modified": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Date Modified",
+            "description": "Upstream modification metadata; never original publication or first availability."
+          },
+          "weight_version": {
+            "type": "string",
+            "title": "Weight Version"
+          },
+          "geometry_version": {
+            "type": "string",
+            "title": "Geometry Version",
+            "description": "Analysis geometry identity only; no polygons."
+          },
+          "metadata_revision_id": {
+            "type": "string",
+            "title": "Metadata Revision Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "coverage_status",
+          "source_time_present",
+          "day_convention",
+          "expected_area_m2",
+          "intersected_area_m2",
+          "source_supported_area_m2",
+          "valid_area_m2",
+          "source_coverage_fraction",
+          "valid_fraction_of_supported_area",
+          "upstream_date_modified",
+          "weight_version",
+          "geometry_version",
+          "metadata_revision_id"
+        ],
+        "title": "EnvironmentalContext",
+        "description": "Coverage independent of value state; numeric strings preserve exact DECIMAL."
+      },
+      "SurveillanceContext": {
+        "properties": {
+          "evidence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SurveillanceEvidenceContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "methodology_comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MethodologyComparisonContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temporal_alignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemporalAlignmentContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SurveillanceContext"
+      },
+      "SurveillanceEvidenceContext": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "const": "atlas-surveillance-evidence-v3",
+            "title": "Contract Version"
+          },
+          "normalized_state": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "established",
+                  "detected",
+                  "unknown"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalized State",
+            "description": "Data-owned county evidence state, projected without classification. Null means the older companion did not supply normalization; unknown supports no biological absence conclusion. Original publisher value remains Observation.value."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "established",
+              "detected_below_establishment",
+              "sampled_not_detected",
+              "no_qualifying_record",
+              "unknown"
+            ],
+            "title": "State"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Reason Codes"
+          },
+          "evidence_tier": {
+            "type": "string",
+            "const": "GOVERNED_MAPPING",
+            "title": "Evidence Tier"
+          },
+          "observation_key": {
+            "type": "string",
+            "title": "Observation Key"
+          },
+          "revision_id": {
+            "type": "string",
+            "title": "Revision Id"
+          },
+          "value_state": {
+            "type": "string",
+            "title": "Value State"
+          },
+          "source_rule_id": {
+            "type": "string",
+            "title": "Source Rule Id"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Limitations"
+          },
+          "evidence_revision_id": {
+            "type": "string",
+            "title": "Evidence Revision Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_version",
+          "state",
+          "reason_codes",
+          "evidence_tier",
+          "observation_key",
+          "revision_id",
+          "value_state",
+          "source_rule_id",
+          "limitations",
+          "evidence_revision_id"
+        ],
+        "title": "SurveillanceEvidenceContext",
+        "description": "Data-projector evidence, never an API classification."
+      },
+      "MethodologyComparisonContext": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "const": "atlas-lyme-surveillance-methodology-v1",
+            "title": "Contract Version"
+          },
+          "comparison_state": {
+            "type": "string",
+            "enum": [
+              "COMPARABLE",
+              "CAUTION_REQUIRED",
+              "NOT_COMPARABLE",
+              "UNKNOWN"
+            ],
+            "title": "Comparison State"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes"
+          },
+          "methodology_era_ids": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Methodology Era Ids"
+          },
+          "jurisdiction_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jurisdiction Class"
+          },
+          "references": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "References"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "left_observation_id": {
+            "type": "string",
+            "title": "Left Observation Id",
+            "description": "Public ID of the comparison's left input."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_version",
+          "comparison_state",
+          "reason_codes",
+          "methodology_era_ids",
+          "jurisdiction_class",
+          "references",
+          "limitations",
+          "left_observation_id"
+        ],
+        "title": "MethodologyComparisonContext"
+      },
+      "TemporalAlignmentContext": {
+        "properties": {
+          "contract_version": {
+            "type": "string",
+            "const": "atlas-temporal-alignment-v1",
+            "title": "Contract Version"
+          },
+          "method_id": {
+            "type": "string",
+            "title": "Method Id"
+          },
+          "method_version": {
+            "type": "string",
+            "title": "Method Version"
+          },
+          "source_id": {
+            "type": "string",
+            "title": "Source Id"
+          },
+          "measure_id": {
+            "type": "string",
+            "title": "Measure Id"
+          },
+          "aggregation_rule": {
+            "type": "string",
+            "title": "Aggregation Rule"
+          },
+          "coverage_denominator": {
+            "type": "string",
+            "title": "Coverage Denominator"
+          },
+          "decision_cutoff": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Decision Cutoff"
+          },
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "ELIGIBLE",
+              "INELIGIBLE",
+              "RETROSPECTIVE_ONLY",
+              "UNKNOWN_AVAILABILITY"
+            ],
+            "title": "Disposition"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "observation_window": {
+            "$ref": "#/components/schemas/TemporalWindowContext"
+          },
+          "target_window": {
+            "$ref": "#/components/schemas/TemporalWindowContext"
+          },
+          "lag": {
+            "$ref": "#/components/schemas/TemporalLagContext"
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/TemporalCoverageContext"
+          },
+          "reference_period": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemporalReferencePeriodContext"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "contract_version",
+          "method_id",
+          "method_version",
+          "source_id",
+          "measure_id",
+          "aggregation_rule",
+          "coverage_denominator",
+          "decision_cutoff",
+          "disposition",
+          "reason_codes",
+          "limitations",
+          "observation_window",
+          "target_window",
+          "lag",
+          "coverage"
+        ],
+        "title": "TemporalAlignmentContext"
+      },
+      "TemporalWindowContext": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end_exclusive": {
+            "type": "string",
+            "format": "date",
+            "title": "End Exclusive"
+          },
+          "calendar": {
+            "type": "string",
+            "const": "GREGORIAN",
+            "title": "Calendar"
+          },
+          "timezone": {
+            "type": "string",
+            "const": "UTC",
+            "title": "Timezone"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start",
+          "end_exclusive",
+          "calendar",
+          "timezone"
+        ],
+        "title": "TemporalWindowContext"
+      },
+      "TemporalLagContext": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ZERO",
+              "FIXED",
+              "ROLLING",
+              "SEASONAL"
+            ],
+            "title": "Kind"
+          },
+          "anchor": {
+            "type": "string",
+            "enum": [
+              "START",
+              "END_EXCLUSIVE"
+            ],
+            "title": "Anchor"
+          },
+          "offset_days": {
+            "type": "integer",
+            "title": "Offset Days"
+          },
+          "window_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Window Days"
+          },
+          "season_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Season Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "anchor",
+          "offset_days"
+        ],
+        "title": "TemporalLagContext"
+      },
+      "TemporalCoverageContext": {
+        "properties": {
+          "expected": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Expected"
+          },
+          "observed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Observed"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "partial_allowed": {
+            "type": "boolean",
+            "title": "Partial Allowed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "expected",
+          "observed",
+          "unit",
+          "partial_allowed"
+        ],
+        "title": "TemporalCoverageContext"
+      },
+      "TemporalReferencePeriodContext": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "start": {
+            "type": "string",
+            "format": "date",
+            "title": "Start"
+          },
+          "end_exclusive": {
+            "type": "string",
+            "format": "date",
+            "title": "End Exclusive"
+          },
+          "source_vintage": {
+            "type": "string",
+            "title": "Source Vintage"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "start",
+          "end_exclusive",
+          "source_vintage"
+        ],
+        "title": "TemporalReferencePeriodContext"
+      },
+      "ResourceEnvelope_Source_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResourceEnvelope[Source]"
+      },
+      "Source": {
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "title": "Source Id",
+            "description": "Public source resource key; distinct from lineage_source_id and dataset_id."
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "publisher": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Publisher"
+          },
+          "lineage_source_id": {
+            "type": "string",
+            "title": "Lineage Source Id"
+          },
+          "dataset_id": {
+            "type": "string",
+            "title": "Dataset Id"
+          },
+          "semantic_version": {
+            "type": "string",
+            "title": "Semantic Version",
+            "description": "Governed semantic contract version, separate from HTTP V1 and application version."
+          },
+          "release_version": {
+            "type": "string",
+            "title": "Release Version",
+            "description": "Governed current-release relationship version."
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "source_vintage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Vintage"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At",
+            "deprecated": true
+          },
+          "atlas_acquired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atlas Acquired At",
+            "description": "Atlas acquisition time when governed; distinct from source publication and processing.",
+            "deprecated": true
+          },
+          "upstream_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Updated At",
+            "description": "Governed publisher update time; null when unavailable."
+          },
+          "source_retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Retrieved At",
+            "description": "Governed source retrieval time; null when unavailable."
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Governed interpretation limitations; preserve alongside values and versions."
+          }
+        },
+        "type": "object",
+        "required": [
+          "source_id",
+          "label",
+          "publisher",
+          "lineage_source_id",
+          "dataset_id",
+          "semantic_version",
+          "release_version"
+        ],
+        "title": "Source"
+      },
+      "ResourceEnvelope_Methodology_": {
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Methodology"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "ResourceEnvelope[Methodology]"
+      },
+      "Methodology": {
+        "properties": {
+          "methodology_id": {
+            "type": "string",
+            "title": "Methodology Id",
+            "description": "Exact governed methodology resource ID; null when not governed."
+          },
+          "measure_id": {
+            "type": "string",
+            "title": "Measure Id"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations",
+            "description": "Governed interpretation limitations; preserve alongside values and versions."
+          },
+          "semantic_version": {
+            "type": "string",
+            "title": "Semantic Version",
+            "description": "Governed semantic contract version, separate from HTTP V1 and application version."
+          },
+          "release_version": {
+            "type": "string",
+            "title": "Release Version",
+            "description": "Governed current-release relationship version."
+          }
+        },
+        "type": "object",
+        "required": [
+          "methodology_id",
+          "measure_id",
+          "version",
+          "description",
+          "limitations",
+          "semantic_version",
+          "release_version"
+        ],
+        "title": "Methodology"
+      }
+    }
+  }
+}
