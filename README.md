@@ -23,7 +23,7 @@ To prove MCP discovery and invocation with the official Python SDK, leave the se
 uv run python -m atlas_lyme_mcp.check_client
 ```
 
-This client initializes Streamable HTTP, discovers all five registered tools, invokes both operational tools, and asserts their structured responses. The no-argument smoke tool returns `service`, `version`, `status`, and the exact message: "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are pretending this was all part of the plan." It is a deterministic, data-free deployment proof, not a Lyme surveillance capability. Set `MCP_URL=https://<host>/mcp` to check a deployed instance. MCP Inspector can also connect to the local endpoint. No stdio entry point is configured.
+This client initializes Streamable HTTP, discovers all six registered tools, invokes both operational tools, and asserts their structured responses. The no-argument smoke tool returns `service`, `version`, `status`, and the exact message: "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are pretending this was all part of the plan." It is a deterministic, data-free deployment proof, not a Lyme surveillance capability. Set `MCP_URL=https://<host>/mcp` to check a deployed instance. MCP Inspector can also connect to the local endpoint. No stdio entry point is configured.
 
 ## Container
 
@@ -62,3 +62,11 @@ docker build -t atlas-lyme-mcp:local .
 ```
 
 After the build, run the container and check both endpoints and both tools as above. CI runs these quality commands and the Docker build without Atlas or production credentials.
+
+
+## County identity resolution
+
+`atlas_resolve_geographies` resolves 1–4 county references by county/state name
+or exact FIPS. See [the bounded identity contract](docs/geography-resolution.md)
+and [ADR 0004](docs/adr/0004-bounded-county-reference-resolution.md). Identity
+resolution does not establish Atlas observations or evidence adequacy.

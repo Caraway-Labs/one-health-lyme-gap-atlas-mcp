@@ -26,6 +26,7 @@ async def verify() -> None:
             "atlas_discover_indicators",
             "atlas_get_county_profile",
             "atlas_get_evidence_provenance",
+            "atlas_resolve_geographies",
         }
         receipts: dict[str, Any] = {
             "endpoint": url,
