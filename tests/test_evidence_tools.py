@@ -42,15 +42,13 @@ def call(name: str, arguments: dict[str, Any], handler: Any) -> CallToolResult:
 def test_all_tools_have_strict_input_and_canonical_output_schemas() -> None:
     tools = asyncio.run(create_server().list_tools())
     assert {t.name for t in tools} == {
-        "server_status",
-        "atlas_smoke_test",
         "atlas_discover_indicators",
         "atlas_get_county_profile",
         "atlas_get_evidence_provenance",
         "atlas_resolve_geographies",
     }
     for tool in tools:
-        if tool.name.startswith("atlas_") and tool.name != "atlas_smoke_test":
+        if tool.name.startswith("atlas_"):
             assert tool.input_schema["additionalProperties"] is False
             Draft202012Validator.check_schema(tool.input_schema)
             assert tool.output_schema is not None

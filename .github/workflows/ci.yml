@@ -23,7 +23,7 @@ jobs:
         with:
           version: "0.10.9"
       - run: docker build -t atlas-lyme-mcp:ci .
-      - run: docker run -d --name atlas-lyme-mcp -p 8000:8000 atlas-lyme-mcp:ci
+      - run: docker run -d --name atlas-lyme-mcp -p 8000:8000 -v "$PWD/tests:/checks:ro" atlas-lyme-mcp:ci python /checks/offline_server.py
       - run: curl --fail --retry-all-errors --retry 12 --retry-delay 2 --max-time 5 http://127.0.0.1:8000/healthz
       - run: uv sync --locked && uv run python -m atlas_lyme_mcp.check_client
       - run: docker inspect --format '{{.State.Running}}' atlas-lyme-mcp | grep true

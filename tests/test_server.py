@@ -1,14 +1,15 @@
 """Server behavior without any external Atlas dependency."""
 
+import asyncio
 import importlib
 from unittest.mock import patch
 
 import pytest
+from mcp.server.mcpserver.exceptions import ToolError
 from starlette.testclient import TestClient
 
 from atlas_lyme_mcp.config import Settings
 from atlas_lyme_mcp.server import create_app, create_server
-from atlas_lyme_mcp.tools.system import SMOKE_MESSAGE, atlas_smoke_test, server_status
 
 
 def test_config_defaults(monkeypatch: object) -> None:
@@ -36,20 +37,6 @@ def test_application_and_health() -> None:
         response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
-
-
-def test_operational_capability() -> None:
-    assert server_status() == {"service": "atlas-lyme-mcp", "version": "0.1.0", "status": "ok"}
-    assert atlas_smoke_test() == {
-        "service": "atlas-lyme-mcp",
-        "version": "0.1.0",
-        "status": "ok",
-        "message": SMOKE_MESSAGE,
-    }
-    assert SMOKE_MESSAGE == (
-        "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are "
-        "pretending this was all part of the plan."
-    )
 
 
 def test_unlisted_host_is_rejected_by_mcp() -> None:
@@ -107,3 +94,13 @@ def test_additive_exact_hosts(host: str, expected: int) -> None:
             headers={"Host": host, "Accept": "application/json, text/event-stream"},
         )
     assert response.status_code == expected
+
+
+@pytest.mark.parametrize("name", ["server_status", "atlas_smoke_test"])
+def test_retired_tools_are_unknown(name: str) -> None:
+    server = create_server(Settings())
+    tools = asyncio.run(server.list_tools())
+    assert len(tools) == 4
+    assert name not in {tool.name for tool in tools}
+    with pytest.raises(ToolError, match=f"Unknown tool: {name}"):
+        asyncio.run(server.call_tool(name, {}))

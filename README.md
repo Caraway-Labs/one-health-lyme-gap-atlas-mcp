@@ -1,10 +1,10 @@
 # One Health Lyme Gap Atlas MCP
 
-An agent-facing Model Context Protocol server for Atlas. The service exposes anonymous read-only indicator discovery, bounded county evidence profiles and source/methodology resolution, alongside `server_status` and `atlas_smoke_test`. Strict FIPS validation executes shared-domain logic locally; governed retrieval crosses the approved public API boundary. No scoring, inference, database access or private API is available. See [the tool contract](docs/public-evidence-tools.md). REST and MCP are peer adapters: future tools may execute approved portable shared-domain logic locally and must call approved Atlas APIs/services when they need governed data or service-owned behavior. See [ADR 0002](docs/adr/0002-mcp-peer-adapter-boundaries.md) for the decision checklist.
+An agent-facing Model Context Protocol server for Atlas. The service exposes anonymous read-only indicator discovery, bounded county evidence profiles and source/methodology resolution, and county identity resolution. Strict FIPS validation executes shared-domain logic locally; governed retrieval crosses the approved public API boundary. No scoring, inference, database access or private API is available. See [the tool contract](docs/public-evidence-tools.md). REST and MCP are peer adapters: future tools may execute approved portable shared-domain logic locally and must call approved Atlas APIs/services when they need governed data or service-owned behavior. See [ADR 0002](docs/adr/0002-mcp-peer-adapter-boundaries.md) for the decision checklist.
 
-The direct `one-health-lyme-gap-atlas-shared` dependency uses the portable base distribution at commit `83ccbe76047185f6aacaff551afd8b03d88aa5cf` (source version `1.0.0`), pinned in `pyproject.toml` and `uv.lock`. No `snowflake`, `observability`, or `legacy` extra is requested. Production imports are limited to `lyme_gap_atlas_shared.domain`; architecture tests guard this boundary. The existing operational tools do not expose Atlas domain data.
+The direct `one-health-lyme-gap-atlas-shared` dependency uses the portable base distribution at commit `83ccbe76047185f6aacaff551afd8b03d88aa5cf` (source version `1.0.0`), pinned in `pyproject.toml` and `uv.lock`. No `snowflake`, `observability`, or `legacy` extra is requested. Production imports are limited to `lyme_gap_atlas_shared.domain`; architecture tests guard this boundary.
 
-The existing operational tools use thin `tools/` adapters over independently testable `application/` functions. The [future-tool checklist](docs/future-tool-template.md) defines where shared pure logic and a future approved service client belong; the approved public-service client now supplies bounded evidence retrieval.
+The four domain tools use thin `tools/` adapters over independently testable `application/` functions. The [future-tool checklist](docs/future-tool-template.md) defines where shared pure logic and a future approved service client belong; the approved public-service client now supplies bounded evidence retrieval.
 
 ## Prerequisites and local setup
 
@@ -23,7 +23,28 @@ To prove MCP discovery and invocation with the official Python SDK, leave the se
 uv run python -m atlas_lyme_mcp.check_client
 ```
 
-This client initializes Streamable HTTP, discovers all six registered tools, invokes both operational tools, and asserts their structured responses. The no-argument smoke tool returns `service`, `version`, `status`, and the exact message: "Atlas MCP is alive on DigitalOcean. The ticks have been notified and are pretending this was all part of the plan." It is a deterministic, data-free deployment proof, not a Lyme surveillance capability. Set `MCP_URL=https://<host>/mcp` to check a deployed instance. MCP Inspector can also connect to the local endpoint. No stdio entry point is configured.
+This client initializes Streamable HTTP, discovers exactly four domain tools, validates
+all advertised schemas, confirms both retired tool names are rejected, invokes
+`atlas_resolve_geographies` for county FIPS `01001`, validates structured output
+and JSON text parity, and checks `/healthz` afterward. This default check uses the
+live county publisher and requires network access. Set `MCP_URL=https://<host>/mcp`
+to check a deployed instance. MCP Inspector can also connect to the endpoint.
+No stdio entry point is configured.
+
+The public inventory is exactly `atlas_resolve_geographies`,
+`atlas_discover_indicators`, `atlas_get_county_profile`, and
+`atlas_get_evidence_provenance`. MCP #27 intentionally removes `server_status`
+and `atlas_smoke_test`: this is backward-incompatible for clients invoking those
+names. They now receive the SDK's standard unknown-tool error, with no aliases.
+Use `/healthz` for HTTP process health, MCP initialization and `tools/list` for
+protocol/discovery, and a supported domain call for execution verification.
+
+Offline protocol tests run the production app through `tests/offline_server.py`,
+which supplies a controlled in-memory county reference without external I/O.
+Docker CI mounts that test-only runner into the built image; the production image
+and normal entry point contain no fixture switch. Full deployed scientific
+acceptance remains `python -m atlas_lyme_mcp.acceptance` on both approved hosts;
+the known API #246 cumulative-evidence blocker is not waived by an identity check.
 
 ## Container
 
@@ -61,7 +82,7 @@ uv run pytest
 docker build -t atlas-lyme-mcp:local .
 ```
 
-After the build, run the container and check both endpoints and both tools as above. CI runs these quality commands and the Docker build without Atlas or production credentials.
+After the build, run the container and check both endpoints and domain invocation as above. CI runs these quality commands and the Docker build without Atlas or production credentials.
 
 
 ## County identity resolution

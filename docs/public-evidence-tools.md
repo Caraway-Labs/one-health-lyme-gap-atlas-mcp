@@ -2,7 +2,11 @@
 
 Audience: public-health epidemiologists/researchers and developers of AI research
 applications. Anonymous public evidence only. Tool descriptions and schemas are
-registered deterministically alongside `server_status` and `atlas_smoke_test`.
+registered deterministically alongside `atlas_resolve_geographies`: exactly four tools.
+MCP #27 intentionally retires `server_status` and `atlas_smoke_test`, breaking
+clients that invoke them. The SDK rejects both names as unknown tools; no alias
+is provided. This supersedes earlier operational inventory decisions while
+preserving historical ADR records and all four domain contracts.
 
 ## Tool arguments and results
 
@@ -77,7 +81,10 @@ and transitive references from an approved API OpenAPI revision and run fidelity
 schema, protocol and live acceptance gates. Never import API runtime dependencies.
 
 Run repository gates and `python -m atlas_lyme_mcp.check_client` for discovery and
-operational regression. `python -m atlas_lyme_mcp.acceptance` opt-in verifies real
+schema validation, retired-name rejection, county resolution and post-call HTTP
+health. Offline CI supplies a test-only local reference; deployed checks use the
+real publisher. `/healthz` proves process health only; initialization, `tools/list`
+and a domain invocation provide protocol/discovery/execution proof. `python -m atlas_lyme_mcp.acceptance` opt-in verifies real
 data and API/MCP fidelity at `MCP_URL`; it is never part of ordinary offline CI.
 Release receipt belongs outside source with exact deployed SHA/protocol and outputs.
 
@@ -85,13 +92,13 @@ Input property descriptions are published in MCP `tools/list`, including nested
 selection and geography fields. Evidence argument models use Pydantic `Field`
 metadata. Geography registration uses `geography_input_schema()` to describe the
 input projection without changing the shared `requested` response schema.
-Operational tools have no input properties. The HTTP protocol regression test
+The HTTP protocol regression test
 checks client-visible descriptions through official SDK discovery.
 
 CI runs `tests/test_metadata_quality.py` in the existing Pytest quality job.
 It initializes the production ASGI application and decodes the actual HTTP
 `tools/list` JSON without SDK defaults masking absent metadata. The reusable
-`tests/metadata_gate.py` validates the six-tool inventory, useful tool/input
+`tests/metadata_gate.py` validates the four-tool inventory, useful tool/input
 prose, self-contained Draft 2020-12 schemas and all four domain annotations.
 Input traversal covers nested objects, arrays, nullable/composed schemas and
 local JSON-pointer references (including cycles); repeated constraint-only
@@ -106,7 +113,8 @@ of complete output schemas (sorted-key JSON, Python default separators).
 This preserves types, required/default fields, literals, bounds, exclusivity
 branches and unknown-property restrictions without duplicating scientific
 schemas. Output descriptions are included in those digests. Issue #25 updates
-only the four domain output digests; the field-level review is in
+only the four domain output digests; #27 removes only the two retired entries,
+leaving every remaining baseline value and digest unchanged; the field-level review is in
 `tests/fixtures/output-schema-25-review.json`.
 Intentional contract changes require review before updating this fixture; never
 regenerate it merely to silence a failure. Description checks reject blanks,
