@@ -26,14 +26,24 @@ def test_serialized_catalog_quality_and_contract(catalog: list[dict[str, Any]]) 
 @pytest.mark.parametrize(
     "tool_name,path,value,diagnostic",
     [
-        ("server_status", "description", None, "server_status.description"),
-        ("server_status", "description", "server_status", "unhelpful description"),
-        ("server_status", "description", "Description goes here", "unhelpful description"),
-        ("server_status", "name", " ", "missing nonempty tool name"),
-        ("atlas_smoke_test", "name", "server_status", "duplicate tool name"),
-        ("atlas_smoke_test", "name", "unexpected_tool", "unexpected tool"),
-        ("server_status", "inputSchema", [], "JSON Schema object"),
-        ("server_status", "inputSchema.type", "invalid", "invalid JSON Schema"),
+        ("atlas_discover_indicators", "description", None, "atlas_discover_indicators.description"),
+        (
+            "atlas_discover_indicators",
+            "description",
+            "atlas_discover_indicators",
+            "unhelpful description",
+        ),
+        (
+            "atlas_discover_indicators",
+            "description",
+            "Description goes here",
+            "unhelpful description",
+        ),
+        ("atlas_discover_indicators", "name", " ", "missing nonempty tool name"),
+        ("atlas_resolve_geographies", "name", "atlas_discover_indicators", "duplicate tool name"),
+        ("atlas_resolve_geographies", "name", "unexpected_tool", "unexpected tool"),
+        ("atlas_discover_indicators", "inputSchema", [], "JSON Schema object"),
+        ("atlas_discover_indicators", "inputSchema.type", "invalid", "invalid JSON Schema"),
         (
             "atlas_get_county_profile",
             "inputSchema.properties.county_fips.description",
@@ -140,8 +150,8 @@ def test_catalog_defects(
 
 
 def test_removed_tool(catalog: list[dict[str, Any]]) -> None:
-    with pytest.raises(AssertionError, match="server_status: missing expected tool"):
-        validate_catalog([tool for tool in catalog if tool["name"] != "server_status"])
+    with pytest.raises(AssertionError, match="atlas_discover_indicators: missing expected tool"):
+        validate_catalog([tool for tool in catalog if tool["name"] != "atlas_discover_indicators"])
 
 
 @pytest.mark.parametrize(

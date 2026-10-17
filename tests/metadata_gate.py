@@ -13,15 +13,13 @@ from jsonschema import Draft202012Validator, SchemaError
 
 EXPECTED_TOOLS = frozenset(
     {
-        "server_status",
-        "atlas_smoke_test",
         "atlas_discover_indicators",
         "atlas_get_county_profile",
         "atlas_get_evidence_provenance",
         "atlas_resolve_geographies",
     }
 )
-DOMAIN_TOOLS = EXPECTED_TOOLS - {"server_status", "atlas_smoke_test"}
+DOMAIN_TOOLS = EXPECTED_TOOLS
 ANNOTATIONS = {
     "readOnlyHint": True,
     "destructiveHint": False,
