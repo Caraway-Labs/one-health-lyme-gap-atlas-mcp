@@ -1,6 +1,6 @@
 {
   "base_sha": "d30a26b6b3c950e8bbfb4b414a69a1f671a7386a",
-  "canonical_bundle_sha256": "21f37f0846b4a2110060d57a3e874410f5c2cc3beccbc5a2bcdd41998fd1a5aa",
+  "canonical_bundle_sha256": "d826124c74bc6731f1510f0af2da964df859da185b3dffd9653bf08d6f91690d",
   "tools": {
     "atlas_discover_indicators": {
       "before_constraints_sha256": "cfd43f53ff8f0e761fa8be09d6d4476e203fffdf9dfd5261aca5bac398741f5c",

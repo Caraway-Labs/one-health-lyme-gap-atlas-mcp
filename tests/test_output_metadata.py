@@ -36,7 +36,9 @@ def test_raw_output_constraints_and_scientific_bundle_unchanged() -> None:
     for tool in discover_catalog():
         receipt = REVIEW["tools"][tool["name"]]
         assert digest(constraints(tool.get("outputSchema"))) == receipt["before_constraints_sha256"]
+    # Git checks out CRLF on Windows; compare canonical repository LF bytes.
     bundle = Path("src/atlas_lyme_mcp/contracts/public-api-schema.json").read_bytes()
+    bundle = bundle.replace(b"\r\n", b"\n")
     assert hashlib.sha256(bundle).hexdigest() == REVIEW["canonical_bundle_sha256"]
 
 
