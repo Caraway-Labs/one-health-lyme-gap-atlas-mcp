@@ -87,3 +87,28 @@ metadata. Geography registration uses `geography_input_schema()` to describe the
 input projection without changing the shared `requested` response schema.
 Operational tools have no input properties. The HTTP protocol regression test
 checks client-visible descriptions through official SDK discovery.
+
+CI runs `tests/test_metadata_quality.py` in the existing Pytest quality job.
+It initializes the production ASGI application and decodes the actual HTTP
+`tools/list` JSON without SDK defaults masking absent metadata. The reusable
+`tests/metadata_gate.py` validates the six-tool inventory, useful tool/input
+prose, self-contained Draft 2020-12 schemas and all four domain annotations.
+Input traversal covers nested objects, arrays, nullable/composed schemas and
+local JSON-pointer references (including cycles); repeated constraint-only
+properties inherit their enclosing declaration. New branch properties and
+unused definitions are checked too. Remote schema retrieval is prohibited.
+Diagnostics identify the tool and property path needing correction.
+
+`tests/fixtures/mcp-catalog-contract.json` records the serialized contract from
+main `7e99775794126adef17161696d9172970acc4d57` before #23. It freezes all input
+metadata except description prose, annotations, and canonical SHA-256 digests
+of complete output schemas (sorted-key JSON, Python default separators).
+This preserves types, required/default fields, literals, bounds, exclusivity
+branches and unknown-property restrictions without duplicating scientific
+schemas. Output descriptions are included in those digests and remain unchanged.
+Intentional contract changes require review before updating this fixture; never
+regenerate it merely to silence a failure. Description checks reject blanks,
+name echoes and common placeholders; human review still assesses prose quality.
+Mutation regressions verify the gate itself without modifying runtime sources.
+Existing runtime validators and their tests remain authoritative for constraints
+that JSON Schema does not express, such as valid dates and cursor coupling.
