@@ -105,10 +105,58 @@ metadata except description prose, annotations, and canonical SHA-256 digests
 of complete output schemas (sorted-key JSON, Python default separators).
 This preserves types, required/default fields, literals, bounds, exclusivity
 branches and unknown-property restrictions without duplicating scientific
-schemas. Output descriptions are included in those digests and remain unchanged.
+schemas. Output descriptions are included in those digests. Issue #25 updates
+only the four domain output digests; the field-level review is in
+`tests/fixtures/output-schema-25-review.json`.
 Intentional contract changes require review before updating this fixture; never
 regenerate it merely to silence a failure. Description checks reject blanks,
 name echoes and common placeholders; human review still assesses prose quality.
 Mutation regressions verify the gate itself without modifying runtime sources.
 Existing runtime validators and their tests remain authoritative for constraints
 that JSON Schema does not express, such as valid dates and cursor coupling.
+
+
+## MCP output interpretation (#25)
+
+Discovery lists published indicators and bounded related measure pages; it does
+not establish county availability. Continue `meta.next_page_token` as `page_token`,
+and each `meta.measure_page_tokens` entry with its `indicator_id` and
+`measure_page_token`. Check both continuation channels. A county profile has a
+separate `next_page_token` for each echoed measure-period selection; continue it
+with the same county, measure, period and release. Success does not mean all
+scientific pages have been retrieved.
+
+`retrieval_state=empty` means no observations on this selection page, never zero
+incidence or biological absence. `returned` means observation records exist,
+including records with null scientific values. Preserve the API distinctions
+between reported zero, missing, suppressed and unavailable evidence; MCP does
+not redefine the canonical Observation or its value-state taxonomy.
+
+`meta.release_id` is derived from returned resources. It can be null when unknown,
+including all-empty discovery or all-empty profile selections. Do not invent a
+release or treat this as historical snapshot support. Matching releases establish
+lineage consistency, not scientific comparability across measures, periods or
+populations. `meta.response_at` is the API response construction time; profiles
+retain the last selection page's timestamp. It is not source freshness. Provenance
+returns the exact source or methodology for the expected current release; a
+mismatch fails. Keep the original observation: provenance metadata alone does
+not establish it. Null source timestamps remain unknown. Provenance wrappers
+have no response timestamp field.
+
+Inspect the error layer before interpreting evidence:
+
+- A successful call with empty evidence or continuation tokens is a normal result.
+- Geography statuses are per-item domain outcomes inside successful calls;
+  `unavailable` is not a scientific missingness state.
+- Execution failures set `CallToolResult.isError=true`; inspect the sanitized
+  error code and retry guidance, rather than validating it as a success payload.
+- SDK/JSON-RPC failures (for example invalid arguments or unknown tools) can occur
+  outside a successful `CallToolResult` and are not empty observations.
+- HTTP ingress rate limiting may return HTTP 429 before tool execution; an upstream
+  rate limit can instead become a tool-level `RATE_LIMITED` error. Neither is evidence.
+
+New schema declarations for existing wrapper fields are annotation-only (no new
+`type`, `required`, enum or bounds). Removing descriptions and empty annotation-only
+property declarations yields exactly the prior validation contract. Scientific
+components remain pinned and byte-for-byte unchanged; missing scientific prose
+belongs to separately reviewed API work, followed by an explicit synchronization.

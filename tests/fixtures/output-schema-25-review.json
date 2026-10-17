@@ -1,0 +1,178 @@
+{
+  "base_sha": "d30a26b6b3c950e8bbfb4b414a69a1f671a7386a",
+  "canonical_bundle_sha256": "d826124c74bc6731f1510f0af2da964df859da185b3dffd9653bf08d6f91690d",
+  "tools": {
+    "atlas_discover_indicators": {
+      "before_constraints_sha256": "cfd43f53ff8f0e761fa8be09d6d4476e203fffdf9dfd5261aca5bac398741f5c",
+      "changes": [
+        {
+          "path": "/properties/indicators/description",
+          "added": "Bounded page of published indicators, not actual county observation availability."
+        },
+        {
+          "path": "/properties/measures/description",
+          "added": "Related measures: one bounded page per returned indicator, not evidence coverage."
+        },
+        {
+          "path": "/properties/meta/description",
+          "added": "Release lineage for this bounded result. Matching releases do not establish scientific comparability or complete evidence coverage."
+        },
+        {
+          "path": "/properties/meta/properties",
+          "added": {
+            "release_id": {
+              "description": "Release identity derived from returned resources; null when unknown, including all-empty discovery or county selections. No historical snapshot is implied. Provenance success matches the requested expected_release_id."
+            },
+            "response_at": {
+              "description": "API response timestamp, not source freshness or source retrieval time. For county profiles this is the last selection page response timestamp; an unknown/null timestamp supplies no freshness evidence."
+            },
+            "next_page_token": {
+              "description": "Opaque continuation for this bounded page; null means no further page is advertised for this query. Successful execution alone does not mean all pages have been retrieved. Preserve query and release when continuing. Supply as page_token for indicator continuation."
+            },
+            "measure_page_tokens": {
+              "description": "Map of indicator IDs to advertised measure continuations. Continue each entry with indicator_id and measure_page_token. An empty map advertises no additional measure pages for these indicators; also inspect the indicator next_page_token before considering discovery exhausted."
+            }
+          }
+        }
+      ]
+    },
+    "atlas_get_county_profile": {
+      "before_constraints_sha256": "81d1010f729d7275f83b2c838f39628771f4e830fc8f11dba544e9a49156994a",
+      "changes": [
+        {
+          "path": "/properties/county_fips/description",
+          "added": "Exact requested five-digit county FIPS, retaining leading zeros."
+        },
+        {
+          "path": "/properties/meta/description",
+          "added": "Release lineage for this bounded result. Matching releases do not establish scientific comparability or complete evidence coverage."
+        },
+        {
+          "path": "/properties/meta/properties",
+          "added": {
+            "release_id": {
+              "description": "Release identity derived from returned resources; null when unknown, including all-empty discovery or county selections. No historical snapshot is implied. Provenance success matches the requested expected_release_id."
+            },
+            "response_at": {
+              "description": "API response timestamp, not source freshness or source retrieval time. For county profiles this is the last selection page response timestamp; an unknown/null timestamp supplies no freshness evidence."
+            }
+          }
+        },
+        {
+          "path": "/properties/selections/description",
+          "added": "Ordered independent measure-period results; shared release does not prove comparability."
+        },
+        {
+          "path": "/properties/selections/items/properties/next_page_token",
+          "added": {
+            "description": "Opaque continuation for this bounded page; null means no further page is advertised for this query. Successful execution alone does not mean all pages have been retrieved. Preserve query and release when continuing. Supply as this selection's page_token with the same county, measure and period."
+          }
+        },
+        {
+          "path": "/properties/selections/items/properties/observations/description",
+          "added": "Unchanged canonical API observations on this page, including null scientific values."
+        },
+        {
+          "path": "/properties/selections/items/properties/request",
+          "added": {
+            "description": "Echoed measure-period selection including its supplied continuation, with absent/null optional arguments omitted; no period or measure is inferred."
+          }
+        },
+        {
+          "path": "/properties/selections/items/properties/retrieval_state/description",
+          "added": "returned means at least one observation, even if its scientific value is null; empty means no observations on this selection page, never zero disease incidence or biological absence. Preserve API zero, missingness, suppression and unavailable states."
+        }
+      ]
+    },
+    "atlas_get_evidence_provenance": {
+      "before_constraints_sha256": "f5dc790c59aa6eb7553fd8a9a1cd573f32561a3e192dec38a4cd59cae870d787",
+      "changes": [
+        {
+          "path": "/properties/meta/description",
+          "added": "Release lineage for this bounded result. Matching releases do not establish scientific comparability or complete evidence coverage."
+        },
+        {
+          "path": "/properties/meta/properties",
+          "added": {
+            "release_id": {
+              "description": "Release identity derived from returned resources; null when unknown, including all-empty discovery or county selections. No historical snapshot is implied. Provenance success matches the requested expected_release_id."
+            }
+          }
+        },
+        {
+          "path": "/properties/reference_id/description",
+          "added": "Exact requested source_id or methodology_id, matched against the returned resource."
+        },
+        {
+          "path": "/properties/reference_type/description",
+          "added": "Requested reference kind: source resource or methodology resource."
+        },
+        {
+          "path": "/properties/resource/description",
+          "added": "Unchanged API source or methodology resource. Provenance alone does not establish the underlying observation; retain original evidence. Null resource timestamps remain unknown."
+        }
+      ]
+    },
+    "atlas_resolve_geographies": {
+      "before_constraints_sha256": "b23ab9bd897c059841cbfacca51ba3964dcc04e14200c2c71fc595ac60e805e1",
+      "changes": [
+        {
+          "path": "/$defs/GeographyResult/properties/candidates/description",
+          "added": "At most four ambiguity candidate previews, potentially incomplete; never automatically select a candidate."
+        },
+        {
+          "path": "/$defs/GeographyResult/properties/geography/description",
+          "added": "Canonical identity only for a resolved match; null for other outcomes. Membership is in the fixed 2022 reference."
+        },
+        {
+          "path": "/$defs/GeographyResult/properties/input_index/description",
+          "added": "Zero-based position in the original input batch; duplicates retain separate positions."
+        },
+        {
+          "path": "/$defs/GeographyResult/properties/reason/description",
+          "added": "Categorical explanation for an unresolved item; null for resolved identity. Reference failure is distinct from no match."
+        },
+        {
+          "path": "/$defs/GeographyResult/properties/requested/description",
+          "added": "Original supplied county reference, preserving the requested representation and text."
+        },
+        {
+          "path": "/$defs/GeographyResult/properties/status/description",
+          "added": "resolved: one reference identity; ambiguous: multiple matches, requiring clarification without automatic choice; not_found: no match in the valid reference; unavailable: reference retrieval or validation failed. None establishes Atlas observation availability."
+        },
+        {
+          "path": "/$defs/Reference/properties/retrieved_at/description",
+          "added": "Actual UTC reference retrieval time, not scientific evidence freshness or response time."
+        },
+        {
+          "path": "/$defs/Reference/properties/sha256/description",
+          "added": "SHA-256 of the sorted retrieved identity projection; not the Data GeoJSON artifact checksum."
+        },
+        {
+          "path": "/$defs/Reference/properties/source/description",
+          "added": "Publisher URL of the approved CDC/ATSDR SVI 2022 county identity reference."
+        },
+        {
+          "path": "/$defs/Reference/properties/version/description",
+          "added": "Fixed SVI 2022 identity vintage, not current legal boundaries or an Atlas release."
+        },
+        {
+          "path": "/properties/reference/description",
+          "added": "Shared approved identity reference provenance; null when unavailable. Identity resolution does not establish scientific observation coverage."
+        },
+        {
+          "path": "/properties/results/description",
+          "added": "One outcome per input in original order, including duplicates and unresolved items; inspect every status."
+        }
+      ]
+    },
+    "server_status": {
+      "before_constraints_sha256": "1c0d3ff0058baebe539ebdbc264d920d1825b01bf0ccaeae7f42cd430b100fec",
+      "changes": []
+    },
+    "atlas_smoke_test": {
+      "before_constraints_sha256": "6a8b28b6161d426a21f739614c39975f6a5d75da44c915fba1f0dc3e2a49be97",
+      "changes": []
+    }
+  }
+}

@@ -34,7 +34,7 @@ def output_schema(name: str) -> dict[str, Any]:
             "items": {"$ref": f"#/components/schemas/{model}"},
         }
 
-    meta = {"type": "object", "required": ["release_id"]}
+    meta: dict[str, Any] = {"type": "object", "required": ["release_id"]}
     properties: dict[str, Any]
     if name == "atlas_discover_indicators":
         properties = {
@@ -71,6 +71,107 @@ def output_schema(name: str) -> dict[str, Any]:
             },
             "meta": meta,
         }
+
+    # Annotation-only declarations preserve the complete previously accepted value set.
+    # Scientific component schemas below remain opaque, pinned API-owned definitions.
+    def describe(node: dict[str, Any], text: str) -> None:
+        node["description"] = text
+
+    meta["description"] = (
+        "Release lineage for this bounded result. Matching releases do not establish "
+        "scientific comparability or complete evidence coverage."
+    )
+    meta["properties"] = {
+        "release_id": {
+            "description": (
+                "Release identity derived from returned resources; null when unknown, "
+                "including all-empty discovery or county selections. No historical snapshot "
+                "is implied. Provenance success matches the requested expected_release_id."
+            )
+        }
+    }
+    if name != "atlas_get_evidence_provenance":
+        meta["properties"]["response_at"] = {
+            "description": (
+                "API response timestamp, not source freshness or source retrieval time. "
+                "For county profiles this is the last selection page response timestamp; "
+                "an unknown/null timestamp supplies no freshness evidence."
+            )
+        }
+    continuation = (
+        "Opaque continuation for this bounded page; null means no further page is "
+        "advertised for this query. Successful execution alone does not mean all pages "
+        "have been retrieved. Preserve query and release when continuing."
+    )
+    if name == "atlas_discover_indicators":
+        describe(
+            properties["indicators"],
+            "Bounded page of published indicators, not actual county observation availability.",
+        )
+        describe(
+            properties["measures"],
+            "Related measures: one bounded page per returned indicator, not evidence coverage.",
+        )
+        meta["properties"]["next_page_token"] = {
+            "description": continuation + " Supply as page_token for indicator continuation."
+        }
+        meta["properties"]["measure_page_tokens"] = {
+            "description": (
+                "Map of indicator IDs to advertised measure continuations. Continue each "
+                "entry with indicator_id and measure_page_token. An empty map advertises "
+                "no additional measure pages for these indicators; also inspect the "
+                "indicator next_page_token before considering discovery exhausted."
+            )
+        }
+    elif name == "atlas_get_county_profile":
+        describe(
+            properties["county_fips"],
+            "Exact requested five-digit county FIPS, retaining leading zeros.",
+        )
+        describe(
+            properties["selections"],
+            (
+                "Ordered independent measure-period results; shared release does not "
+                "prove comparability."
+            ),
+        )
+        fields = properties["selections"]["items"]["properties"]
+        fields["request"] = {
+            "description": (
+                "Echoed measure-period selection including its supplied continuation, with "
+                "absent/null optional arguments omitted; no period or measure is inferred."
+            )
+        }
+        fields["next_page_token"] = {
+            "description": continuation
+            + (" Supply as this selection's page_token with the same county, measure and period.")
+        }
+        describe(
+            fields["observations"],
+            "Unchanged canonical API observations on this page, including null scientific values.",
+        )
+        describe(
+            fields["retrieval_state"],
+            "returned means at least one observation, even if its scientific value is null; "
+            "empty means no observations on this selection page, never zero disease incidence "
+            "or biological absence. Preserve API zero, missingness, suppression and"
+            " unavailable states.",
+        )
+    else:
+        describe(
+            properties["reference_type"],
+            "Requested reference kind: source resource or methodology resource.",
+        )
+        describe(
+            properties["reference_id"],
+            "Exact requested source_id or methodology_id, matched against the returned resource.",
+        )
+        describe(
+            properties["resource"],
+            "Unchanged API source or methodology resource. Provenance alone does not establish "
+            "the underlying observation; retain original evidence. Null resource "
+            "timestamps remain unknown.",
+        )
     return {
         "type": "object",
         "additionalProperties": False,

@@ -63,7 +63,7 @@
       "title": "DiscoveryArguments",
       "type": "object"
     },
-    "outputSchema": "831ec511105f7f7bb45879751f63985d53d1a339b07316f56eb3ccd51e6b7ace"
+    "outputSchema": "586dab68c5b06c54f00d6f6fd48585e4da3b0385306bd3557ec3a6efd02e1d5b"
   },
   "atlas_get_county_profile": {
     "annotations": {
@@ -217,7 +217,7 @@
       "title": "ProfileArguments",
       "type": "object"
     },
-    "outputSchema": "37a54da1f1f80f2452fd38625ec6c7903c9f2e02c1434e7f8b41abe3ddea9437"
+    "outputSchema": "9e969a4870e8c99c0a8601e848af37bfe410a38b6c212077bbf7fc262b6b1f4e"
   },
   "atlas_get_evidence_provenance": {
     "annotations": {
@@ -260,7 +260,7 @@
       "title": "ProvenanceArguments",
       "type": "object"
     },
-    "outputSchema": "96a5dd3999c67f37560579e85760fec1870cc83790c46db36754ad55fee95525"
+    "outputSchema": "5f65a6623d9f5f130a4d5bb52ef1ba3c2604da1475034554908e2691cbe889e3"
   },
   "atlas_resolve_geographies": {
     "annotations": {
@@ -393,7 +393,7 @@
       "title": "GeographyArguments",
       "type": "object"
     },
-    "outputSchema": "b23ab9bd897c059841cbfacca51ba3964dcc04e14200c2c71fc595ac60e805e1"
+    "outputSchema": "62b11d3599fde56a55b40569b97506a8477534afe02e3bddf04b680f2f733558"
   },
   "atlas_smoke_test": {
     "annotations": null,
