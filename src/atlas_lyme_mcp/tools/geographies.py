@@ -11,6 +11,7 @@ from atlas_lyme_mcp.tools.geography_contracts import (
     GeographyArguments,
     GeographyRequest,
     GeographyResults,
+    geography_input_schema,
 )
 
 
@@ -42,5 +43,5 @@ def geography_tool(resolver: GeographyResolver) -> Tool:
     tool.fn_metadata = StrictMetadata(
         arg_model=GeographyArguments, output_schema=GeographyResults.model_json_schema()
     )
-    tool.parameters = GeographyArguments.model_json_schema()
+    tool.parameters = geography_input_schema()
     return tool
