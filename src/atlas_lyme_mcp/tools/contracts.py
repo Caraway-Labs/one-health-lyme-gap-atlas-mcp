@@ -193,7 +193,8 @@ class ProfileArguments(StrictArguments):
         max_length=5,
         description=(
             "Required exact five-digit ASCII county FIPS string, preserving leading zeros "
-            "(for example 01001). Do not pass a number, whitespace-padded or short code or county name. "
+            "(for example 01001). Do not pass a number, whitespace-padded or short code, "
+            "or county name. "
             "Resolve county/state names with atlas_resolve_geographies first; no county "
             "name inference or zero padding occurs here. "
         ),
