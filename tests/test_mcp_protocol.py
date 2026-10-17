@@ -23,7 +23,7 @@ def running_server() -> Iterator[int]:
         port = probe.getsockname()[1]
     env = {**os.environ, "HOST": "127.0.0.1", "PORT": str(port), "MCP_ALLOWED_HOSTS": ""}
     process = subprocess.Popen(
-        [sys.executable, "-m", "atlas_lyme_mcp.server"],
+        [sys.executable, "tests/offline_server.py"],
         env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
@@ -58,9 +58,9 @@ def test_http_initialize_discover_and_invoke(
     asyncio.run(check())
     output = capsys.readouterr().out
     assert "MCP initialized:" in output
-    assert "atlas_smoke_test" in output
-    assert "server_status" in output
-    assert "Atlas MCP is alive on DigitalOcean." in output
+    assert "atlas_resolve_geographies:" in output
+    assert "server_status" not in output
+    assert "atlas_smoke_test" not in output
 
 
 def test_http_discovery_input_descriptions(running_server: int) -> None:
@@ -71,15 +71,11 @@ def test_http_discovery_input_descriptions(running_server: int) -> None:
             response = await client.list_tools()
             tools = {tool.name: tool for tool in response.tools}
             assert set(tools) == {
-                "server_status",
-                "atlas_smoke_test",
                 "atlas_discover_indicators",
                 "atlas_get_county_profile",
                 "atlas_get_evidence_provenance",
                 "atlas_resolve_geographies",
             }
-            for name in ("server_status", "atlas_smoke_test"):
-                assert not tools[name].input_schema.get("properties")
             discovery = tools["atlas_discover_indicators"].input_schema["properties"]
             assert "published indicator ID" in discovery["indicator_id"]["description"]
             assert "defaults to 3" in discovery["page_size"]["description"]

@@ -16,7 +16,6 @@ from atlas_lyme_mcp.config import Settings
 from atlas_lyme_mcp.protection import PublicProtection
 from atlas_lyme_mcp.tools.evidence import EvidenceTools
 from atlas_lyme_mcp.tools.geographies import geography_tool
-from atlas_lyme_mcp.tools.system import atlas_smoke_test, server_status
 
 
 def create_server(settings: Settings | None = None, client: AtlasClient | None = None) -> MCPServer:
@@ -31,8 +30,6 @@ def create_server(settings: Settings | None = None, client: AtlasClient | None =
         tools=EvidenceTools(client or AtlasClient(settings.api_origin)).registered()
         + [geography_tool(GeographyResolver())],
     )
-    mcp.tool()(server_status)
-    mcp.tool()(atlas_smoke_test)
 
     @mcp.custom_route("/healthz", methods=["GET"])  # type: ignore[untyped-decorator]
     async def healthz(_request: Request) -> JSONResponse:

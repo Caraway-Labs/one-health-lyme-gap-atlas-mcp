@@ -8,6 +8,7 @@ from typing import Any
 from mcp import Client
 
 from atlas_lyme_mcp.application.client import AtlasClient
+from atlas_lyme_mcp.check_client import verify_client, verify_health
 
 
 async def verify() -> None:
@@ -19,24 +20,20 @@ async def verify() -> None:
         raise ValueError("Acceptance requires an approved existing public MCP endpoint")
     api = AtlasClient("https://api.onehealthatlas.org")
     async with Client(url, mode="legacy") as client:
+        identity = await verify_client(client)
         names = {tool.name for tool in (await client.list_tools()).tools}
         assert names == {
-            "server_status",
-            "atlas_smoke_test",
             "atlas_discover_indicators",
             "atlas_get_county_profile",
             "atlas_get_evidence_provenance",
             "atlas_resolve_geographies",
         }
         receipts: dict[str, Any] = {
+            "identity": identity,
             "endpoint": url,
             "protocol": client.protocol_version,
             "tools": sorted(names),
         }
-        for name in ("server_status", "atlas_smoke_test"):
-            result = await client.call_tool(name, {})
-            assert not result.is_error
-            receipts[name] = result.structured_content
         discovery = await client.call_tool(
             "atlas_discover_indicators", {"indicator_id": "human_disease_burden", "page_size": 1}
         )
@@ -98,6 +95,7 @@ async def verify() -> None:
         assert failure.is_error and failure.structured_content
         assert failure.structured_content["code"] == "RELEASE_CHANGED"
         receipts["safe_failure"] = failure.structured_content
+        verify_health(url)
         print(json.dumps(receipts, indent=2))
 
 

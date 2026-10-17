@@ -394,23 +394,5 @@
       "type": "object"
     },
     "outputSchema": "62b11d3599fde56a55b40569b97506a8477534afe02e3bddf04b680f2f733558"
-  },
-  "atlas_smoke_test": {
-    "annotations": null,
-    "inputSchema": {
-      "properties": {},
-      "title": "atlas_smoke_testArguments",
-      "type": "object"
-    },
-    "outputSchema": "6a8b28b6161d426a21f739614c39975f6a5d75da44c915fba1f0dc3e2a49be97"
-  },
-  "server_status": {
-    "annotations": null,
-    "inputSchema": {
-      "properties": {},
-      "title": "server_statusArguments",
-      "type": "object"
-    },
-    "outputSchema": "1c0d3ff0058baebe539ebdbc264d920d1825b01bf0ccaeae7f42cd430b100fec"
   }
 }

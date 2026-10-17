@@ -1,6 +1,10 @@
 # DigitalOcean MCP development deployment
 
-This runbook retains Epic #4 foundation receipts and the existing release procedure. ADR 0003 now authorizes three anonymous read-only public evidence tools in this same service; see [the current contract](../public-evidence-tools.md). Database connections, private APIs, inference and writes remain excluded. Use both branded and starter HTTPS endpoints.
+This runbook retains historical Epic #4 receipts and the existing release procedure.
+MCP #27 supersedes the operational inventory: exactly four domain tools are
+exposed. `server_status` and `atlas_smoke_test` are intentionally removed, a
+backward-incompatible change for their callers; the SDK returns unknown-tool
+errors without aliases. Historical ADRs and receipts below describe past releases. ADR 0003 now authorizes three anonymous read-only public evidence tools in this same service; see [the current contract](../public-evidence-tools.md). Database connections, private APIs, inference and writes remain excluded. Use both branded and starter HTTPS endpoints.
 
 ## Architecture and configuration
 
@@ -29,8 +33,8 @@ Save. DNS/TLS completion remains pending until independently verified.
 
 After Save, inspect authoritative/public DNS, DigitalOcean domain validation,
 and a hostname-valid managed certificate. Run `/healthz` and the official SDK
-check client on both hosts; verify all five registered tools and the operational tools' exact
-outputs. Test unexpected Hosts and ports remain rejected. Compare live spec
+check client on both hosts; verify exactly four domain tools, advertised schemas, retired-name rejection
+and a successful structured county-resolution result. Test unexpected Hosts and ports remain rejected. Compare live spec
 against its pre-change snapshot: only domains and `MCP_ALLOWED_HOSTS` may differ.
 Record deployment ID/SHA, results and logs in Web #356; close it only after all
 checks pass, leaving #353 open. Owner review is required before merging this PR.
@@ -50,7 +54,7 @@ docker build -t atlas-lyme-mcp:local .
 docker run --rm --name atlas-lyme-mcp -p 8000:8000 atlas-lyme-mcp:local
 ```
 
-In another shell, run `curl.exe --fail --show-error http://127.0.0.1:8000/healthz`, then `uv run python -m atlas_lyme_mcp.check_client`. The client explicitly initializes MCP, discovers both tools, invokes both, and asserts the exact structured smoke response. Inspect `docker logs atlas-lyme-mcp`; stop the container when done. `docker compose up --build` is an alternative local runner.
+In another shell, run `curl.exe --fail --show-error http://127.0.0.1:8000/healthz`, then `uv run python -m atlas_lyme_mcp.check_client`. The client initializes MCP, discovers exactly four domain tools, validates schemas, rejects retired names, invokes county resolution and validates structured/text parity, then checks `/healthz`. It requires live publisher access. For offline checks use `uv run python tests/offline_server.py` as the server, as in protocol tests; hosted Docker CI mounts this test-only runner into the image. Inspect `docker logs atlas-lyme-mcp`; stop the container when done. `docker compose up --build` is an alternative local runner.
 
 ## Controlled GitHub release
 
@@ -83,17 +87,23 @@ Confirm the project assignment, `main` source branch, exact reviewed source comm
 
 ## Remote verification and evidence
 
+`tests/verify_release_catalog.py` compares raw remote metadata with both the
+reviewed four-entry baseline and the full local serialized catalog, including
+descriptions and annotations. Run it from the exact reviewed merge checkout.
+
 Set the hostname from the active app's `default_ingress`. Keep the URL, SHA, deployment ID, date, and non-secret results in the final evidence record. Do not copy credentials, full environment dumps, or sensitive infrastructure details.
 
 ```powershell
 curl.exe --fail --show-error --silent https://<generated-host>/healthz
 $env:MCP_URL = "https://<generated-host>/mcp"
 uv run python -m atlas_lyme_mcp.check_client
+uv run python tests/verify_release_catalog.py
+uv run python -m atlas_lyme_mcp.acceptance
 doctl apps logs <app-id> mcp --type build
 doctl apps logs <app-id> mcp --type run
 ```
 
-Verify TLS certificate validity, HTTP health, MCP initialization, both discovered tools, both successful invocations, and the exact smoke message. Review logs after the calls for startup failures, HTTP 421/403, redirects, transport failures, and crash loops. App health alone is insufficient.
+Verify TLS certificate validity, HTTP health, MCP initialization, exactly four domain tools, schemas, both retired-name rejections and successful structured county resolution on both public hosts. Run `uv run python -m atlas_lyme_mcp.acceptance` separately on each host for ADR 0003 scientific fidelity, missingness, provenance and safe failure. API #246 remains an upstream cumulative-evidence blocker: record the exact failing request and preserve the issue branch/worktree if full acceptance fails. Do not weaken assertions or claim scientific acceptance from identity verification. Review logs after the calls for startup failures, HTTP 421/403, redirects, transport failures, and crash loops. App health alone is insufficient.
 
 ## Cursor proof
 
@@ -109,9 +119,9 @@ After remote SDK verification, add the following to the user-local `~/.cursor/mc
 }
 ```
 
-In Cursor, confirm the server is connected and both tools appear. Ask it to call `server_status`, then `atlas_smoke_test` with no arguments. Expand the **actual MCP tool-call result** and capture its four fields and exact message. Correlate the call time with DigitalOcean run logs. Cursor's conversational summary does not prove remote invocation. Inspect Cursor's MCP Logs panel if connection or discovery fails.
+In Cursor, confirm exactly four domain tools appear. Call `atlas_resolve_geographies` with `{"geographies":[{"county_fips":"01001"}]}`. Expand the **actual MCP tool-call result** and capture the structured county identity and reference provenance. Correlate the call time with DigitalOcean run logs. Cursor's conversational summary does not prove remote invocation. Inspect Cursor's MCP Logs panel if connection or discovery fails.
 
-## Epic #4 UAT evidence
+## Historical Epic #4 UAT evidence (retired tools; not current instructions)
 
 On 2026-09-26, the user completed Cursor UAT against the configured `atlas-lyme-dev` server at `https://oh-lyme-mcp-dev-7jcfi.ondigitalocean.app/mcp`. Cursor reported the MCP namespace as `ready`. The recorded local clock after both calls was 17:12:28 MDT (23:12:28 UTC). The UAT record places `server_status` before 17:11:07 MDT and `atlas_smoke_test` after 17:11:07 MDT but before 17:12:28 MDT; it does not contain exact per-call timestamps.
 
