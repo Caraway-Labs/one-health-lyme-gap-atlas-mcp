@@ -103,7 +103,11 @@ def test_raw_http_success_and_error_parity(monkeypatch: pytest.MonkeyPatch, fail
             "observations": "observations",
             "sources": "source",
         }
-        return httpx.Response(200, json=fixture(names[resource]))
+        page = fixture(names[resource])
+        if resource in {"indicators", "measures"}:
+            # The recorded catalog fixtures contain several independent examples.
+            page["data"] = [page["data"][1]]
+        return httpx.Response(200, json=page)
 
     client = AtlasClient("https://api.onehealthatlas.org", httpx.MockTransport(handler))
     monkeypatch.setattr("atlas_lyme_mcp.server.AtlasClient", lambda _: client)
