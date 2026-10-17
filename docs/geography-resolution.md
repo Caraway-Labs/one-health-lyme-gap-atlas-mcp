@@ -72,3 +72,18 @@ Geography acceptance invokes single, two and four-item requests, mixed failure,
 and leading-zero FIPS, comparing identities/digest with a fresh publisher read.
 Existing evidence acceptance verifies original tools. Record actual production
 results. Rollback redeploys the previously reviewed source through the runbook.
+
+
+## Interpreting outcomes
+
+`resolved` supplies one canonical reference identity. `ambiguous` supplies a
+limited candidate preview and requires clarification; never automatically choose
+one. `not_found` means no match in the valid reference. `unavailable` means the
+reference could not be retrieved or validated, not that a county does not exist.
+Inspect every ordered item, its zero-based `input_index`, echoed `requested`,
+nullable `geography`, `candidates` and categorical `reason`. The shared reference
+is null when unavailable. The SVI 2022 version, identity-projection checksum and
+actual reference retrieval time describe identity lineage, not Atlas scientific
+release, observation availability or freshness. A successful MCP call can contain
+unresolved items; protocol errors, tool `isError` and HTTP rate limits are separate
+layers described in the public evidence tool contract.

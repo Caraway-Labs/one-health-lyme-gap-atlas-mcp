@@ -95,24 +95,93 @@ class Geography(StrictModel):
 
 
 class Reference(StrictModel):
-    source: str = Field(max_length=512)
-    version: str = Field(max_length=128)
-    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    retrieved_at: str = Field(max_length=64)
+    source: str = Field(
+        max_length=512,
+        description="Publisher URL of the approved CDC/ATSDR SVI 2022 county identity reference.",
+    )
+    version: str = Field(
+        max_length=128,
+        description=(
+            "Fixed SVI 2022 identity vintage, not current legal boundaries or an Atlas release."
+        ),
+    )
+    sha256: str = Field(
+        pattern=r"^[0-9a-f]{64}$",
+        description=(
+            "SHA-256 of the sorted retrieved identity projection; not the Data "
+            "GeoJSON artifact checksum."
+        ),
+    )
+    retrieved_at: str = Field(
+        max_length=64,
+        description=(
+            "Actual UTC reference retrieval time, not scientific evidence freshness"
+            " or response time."
+        ),
+    )
 
 
 class GeographyResult(StrictModel):
-    input_index: int = Field(ge=0, le=3)
-    requested: GeographyRequest
-    status: Literal["resolved", "ambiguous", "not_found", "unavailable"]
-    geography: Geography | None = None
-    candidates: list[Geography] = Field(default_factory=list, max_length=4)
-    reason: Literal["AMBIGUOUS", "NOT_FOUND", "REFERENCE_UNAVAILABLE"] | None = None
+    input_index: int = Field(
+        ge=0,
+        le=3,
+        description=(
+            "Zero-based position in the original input batch; duplicates retain separate positions."
+        ),
+    )
+    requested: GeographyRequest = Field(
+        description=(
+            "Original supplied county reference, preserving the requested representation and text."
+        )
+    )
+    status: Literal["resolved", "ambiguous", "not_found", "unavailable"] = Field(
+        description=(
+            "resolved: one reference identity; ambiguous: multiple matches, "
+            "requiring clarification without automatic choice; not_found: no match "
+            "in the valid reference; unavailable: reference retrieval or validation"
+            " failed. None establishes Atlas observation availability."
+        )
+    )
+    geography: Geography | None = Field(
+        default=None,
+        description=(
+            "Canonical identity only for a resolved match; null for other outcomes."
+            " Membership is in the fixed 2022 reference."
+        ),
+    )
+    candidates: list[Geography] = Field(
+        default_factory=list,
+        max_length=4,
+        description=(
+            "At most four ambiguity candidate previews, potentially incomplete; "
+            "never automatically select a candidate."
+        ),
+    )
+    reason: Literal["AMBIGUOUS", "NOT_FOUND", "REFERENCE_UNAVAILABLE"] | None = Field(
+        default=None,
+        description=(
+            "Categorical explanation for an unresolved item; null for resolved "
+            "identity. Reference failure is distinct from no match."
+        ),
+    )
 
 
 class GeographyResults(StrictModel):
-    results: list[GeographyResult] = Field(min_length=1, max_length=4)
-    reference: Reference | None
+    results: list[GeographyResult] = Field(
+        min_length=1,
+        max_length=4,
+        description=(
+            "One outcome per input in original order, including duplicates and "
+            "unresolved items; inspect every status."
+        ),
+    )
+    reference: Reference | None = Field(
+        description=(
+            "Shared approved identity reference provenance; null when unavailable. "
+            "Identity resolution does not establish scientific observation "
+            "coverage."
+        )
+    )
 
 
 def geography_input_schema() -> dict[str, Any]:

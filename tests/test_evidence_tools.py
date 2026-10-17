@@ -408,3 +408,45 @@ def test_whole_tool_deadline_and_downstream_budget(monkeypatch: pytest.MonkeyPat
     runtime.client.calls.extend([time.monotonic()] * 50)
     with pytest.raises(RetrievalError, match="RATE_LIMITED"):
         asyncio.run(runtime.client.get("observations", {}, "CollectionEnvelope_Observation_"))
+
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_multiselection_metadata_value_fidelity(empty: bool) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        page = fixture("observations")
+        if empty:
+            page["data"] = []
+        else:
+            page["data"][0].update(
+                measure_id=request.url.params["measure_id"], value_state="MISSING", value=None
+            )
+        page["meta"]["next_page_token"] = "unchanged-cursor"
+        return httpx.Response(200, json=page)
+
+    selections = [{"measure_id": measure, "year": 2023} for measure in ("a", "b", "c")]
+    result = call("atlas_get_county_profile", PROFILE | {"selections": selections}, handler)
+    assert not result.is_error
+    value = result.structured_content
+    assert value is not None
+    assert value["meta"]["release_id"] == (None if empty else RELEASE)
+    for original, entry in zip(selections, value["selections"], strict=True):
+        assert entry["request"] == original
+        assert entry["next_page_token"] == "unchanged-cursor"
+        assert entry["retrieval_state"] == ("empty" if empty else "returned")
+        assert len(entry["observations"]) == (0 if empty else 1)
+        if not empty:
+            assert entry["observations"][0]["value"] is None
+    assert json.loads(result.content[0].text) == value  # type: ignore[union-attr]
+
+
+def test_empty_discovery_unknown_release_and_parity() -> None:
+    page = fixture("indicators")
+    page["data"] = []
+    result = call("atlas_discover_indicators", {}, lambda _: httpx.Response(200, json=page))
+    assert not result.is_error
+    assert result.structured_content == {
+        "indicators": [],
+        "measures": [],
+        "meta": {**page["meta"], "release_id": None, "measure_page_tokens": {}},
+    }
+    assert json.loads(result.content[0].text) == result.structured_content  # type: ignore[union-attr]
