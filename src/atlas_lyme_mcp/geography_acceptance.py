@@ -7,6 +7,7 @@ import os
 from mcp import Client
 
 from atlas_lyme_mcp.application.geographies import GeographyResolver
+from atlas_lyme_mcp.check_client import EXPECTED_TOOLS
 from atlas_lyme_mcp.tools.geography_contracts import GeographyArguments
 
 
@@ -24,7 +25,7 @@ async def verify() -> None:
     assert direct.reference is not None
     async with Client(url, mode="legacy") as client:
         names = sorted(tool.name for tool in (await client.list_tools()).tools)
-        assert len(names) == 6 and "atlas_resolve_geographies" in names
+        assert len(names) == len(EXPECTED_TOOLS) and set(names) == EXPECTED_TOOLS
         single = await client.call_tool(
             "atlas_resolve_geographies", {"geographies": [{"county_fips": "16001"}]}
         )
