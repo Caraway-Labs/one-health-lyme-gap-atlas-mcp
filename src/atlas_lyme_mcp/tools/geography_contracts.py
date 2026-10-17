@@ -72,7 +72,17 @@ class GeographyRequest(StrictModel):
 
 
 class GeographyArguments(StrictArguments):
-    geographies: list[GeographyRequest] = Field(min_length=1, max_length=4)
+    geographies: list[GeographyRequest] = Field(
+        min_length=1,
+        max_length=4,
+        description=(
+            "Required array of 1–4 county references, each using exactly county_fips OR "
+            "county plus state. Results preserve input order and duplicates. Names are "
+            "resolved conservatively against the CDC/ATSDR SVI 2022 US states/DC reference; "
+            "ambiguous matches require agent/user clarification, never automatic choice. "
+            "Identity does not establish evidence availability or current legal boundaries. "
+        ),
+    )
 
 
 class Geography(StrictModel):
@@ -103,3 +113,34 @@ class GeographyResult(StrictModel):
 class GeographyResults(StrictModel):
     results: list[GeographyResult] = Field(min_length=1, max_length=4)
     reference: Reference | None
+
+
+def geography_input_schema() -> dict[str, Any]:
+    """Describe input-only fields without changing the shared requested output schema."""
+    schema = GeographyArguments.model_json_schema()
+    properties = schema["$defs"]["GeographyRequest"]["properties"]
+    descriptions = {
+        "county_fips": (
+            "Exact five-digit ASCII county FIPS string, preserving leading zeros (for "
+            "example 01001). Supply this alone for FIPS lookup; omit county and state. No "
+            "zero padding or numeric coercion occurs. Omit this field entirely for "
+            "county/state lookup; explicit null is invalid. "
+        ),
+        "county": (
+            "County name, nonblank and at most 128 characters without control characters. "
+            "Supply with state and omit county_fips. Case and whitespace are normalized and "
+            "the County suffix is optional; other county equivalents need the full name "
+            "(for example Baltimore city). No fuzzy matching or city/ZIP geocoding; "
+            "ambiguous results require clarification. Omit entirely for FIPS lookup; null "
+            "is invalid. "
+        ),
+        "state": (
+            "US state name or two-letter postal abbreviation (including DC), nonblank and "
+            "at most 128 characters without control characters. Required with county to "
+            "disambiguate names; case and whitespace are normalized. Omit entirely with "
+            "county_fips; null is invalid. Territories are outside the reference scope. "
+        ),
+    }
+    for name, description in descriptions.items():
+        properties[name]["description"] = description
+    return schema

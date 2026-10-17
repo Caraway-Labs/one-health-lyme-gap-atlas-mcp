@@ -80,3 +80,10 @@ Run repository gates and `python -m atlas_lyme_mcp.check_client` for discovery a
 operational regression. `python -m atlas_lyme_mcp.acceptance` opt-in verifies real
 data and API/MCP fidelity at `MCP_URL`; it is never part of ordinary offline CI.
 Release receipt belongs outside source with exact deployed SHA/protocol and outputs.
+
+Input property descriptions are published in MCP `tools/list`, including nested
+selection and geography fields. Evidence argument models use Pydantic `Field`
+metadata. Geography registration uses `geography_input_schema()` to describe the
+input projection without changing the shared `requested` response schema.
+Operational tools have no input properties. The HTTP protocol regression test
+checks client-visible descriptions through official SDK discovery.

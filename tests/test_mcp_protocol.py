@@ -11,6 +11,7 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 import pytest
+from mcp import Client
 
 from atlas_lyme_mcp.check_client import check
 
@@ -60,3 +61,55 @@ def test_http_initialize_discover_and_invoke(
     assert "atlas_smoke_test" in output
     assert "server_status" in output
     assert "Atlas MCP is alive on DigitalOcean." in output
+
+
+def test_http_discovery_input_descriptions(running_server: int) -> None:
+    """Assert client-visible metadata, including referenced array item models."""
+
+    async def discover() -> None:
+        async with Client(f"http://127.0.0.1:{running_server}/mcp", mode="legacy") as client:
+            response = await client.list_tools()
+            tools = {tool.name: tool for tool in response.tools}
+            assert set(tools) == {
+                "server_status",
+                "atlas_smoke_test",
+                "atlas_discover_indicators",
+                "atlas_get_county_profile",
+                "atlas_get_evidence_provenance",
+                "atlas_resolve_geographies",
+            }
+            for name in ("server_status", "atlas_smoke_test"):
+                assert not tools[name].input_schema.get("properties")
+            discovery = tools["atlas_discover_indicators"].input_schema["properties"]
+            assert "published indicator ID" in discovery["indicator_id"]["description"]
+            assert "defaults to 3" in discovery["page_size"]["description"]
+            assert "meta.next_page_token" in discovery["page_token"]["description"]
+            assert "meta.measure_page_tokens" in discovery["measure_page_token"]["description"]
+            profile = tools["atlas_get_county_profile"].input_schema
+            assert "leading zeros" in profile["properties"]["county_fips"]["description"]
+            assert "unique" in profile["properties"]["selections"]["description"]
+            selection_ref = profile["properties"]["selections"]["items"]["$ref"]
+            selection = profile["$defs"][selection_ref.rsplit("/", 1)[1]]["properties"]
+            assert "published measure ID" in selection["measure_id"]["description"]
+            assert "never both" in selection["year"]["description"]
+            assert "31 inclusive days" in selection["start_date"]["description"]
+            assert "YYYY-MM-DD" in selection["end_date"]["description"]
+            assert "same county_fips" in selection["page_token"]["description"]
+            provenance = tools["atlas_get_evidence_provenance"].input_schema["properties"]
+            assert "reference kind" in provenance["reference_type"]["description"]
+            assert "source_id or methodology_id" in provenance["reference_id"]["description"]
+            assert "RELEASE_CHANGED" in provenance["expected_release_id"]["description"]
+            geography = tools["atlas_resolve_geographies"].input_schema
+            assert "input order" in geography["properties"]["geographies"]["description"]
+            geography_ref = geography["properties"]["geographies"]["items"]["$ref"]
+            request = geography["$defs"][geography_ref.rsplit("/", 1)[1]]["properties"]
+            assert "leading zeros" in request["county_fips"]["description"]
+            assert "No fuzzy matching" in request["county"]["description"]
+            assert "postal abbreviation" in request["state"]["description"]
+            # Input descriptions must not leak into the shared requested output model.
+            output = tools["atlas_resolve_geographies"].output_schema
+            assert output is not None
+            requested_output = output["$defs"]["GeographyRequest"]["properties"]
+            assert all("description" not in field for field in requested_output.values())
+
+    asyncio.run(discover())
