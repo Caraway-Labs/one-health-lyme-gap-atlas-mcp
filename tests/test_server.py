@@ -100,7 +100,7 @@ def test_additive_exact_hosts(host: str, expected: int) -> None:
 def test_retired_tools_are_unknown(name: str) -> None:
     server = create_server(Settings())
     tools = asyncio.run(server.list_tools())
-    assert len(tools) == 4
+    assert len(tools) == 9
     assert name not in {tool.name for tool in tools}
     with pytest.raises(ToolError, match=f"Unknown tool: {name}"):
         asyncio.run(server.call_tool(name, {}))

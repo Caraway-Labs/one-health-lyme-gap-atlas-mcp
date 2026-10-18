@@ -58,7 +58,9 @@ async def discover(client: AtlasClient, request: DiscoveryArguments) -> dict[str
     }
 
 
-async def profile(client: AtlasClient, request: ProfileArguments) -> dict[str, Any]:
+async def profile(
+    client: AtlasClient, request: ProfileArguments, *, include_selection_meta: bool = False
+) -> dict[str, Any]:
     selections: list[dict[str, Any]] = []
     release: str | None = None
     response_at: str | None = None
@@ -106,6 +108,8 @@ async def profile(client: AtlasClient, request: ProfileArguments) -> dict[str, A
                 or (state == "NO_COUNTY_LINKED_RECORD" and value != "no_county_linked_record")
             ):
                 raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
+        if include_selection_meta and page["meta"].get("release_id"):
+            release = same_release([page["meta"]], "release_id", release)
         response_at = page["meta"]["response_at"]
         selections.append(
             {
@@ -115,6 +119,8 @@ async def profile(client: AtlasClient, request: ProfileArguments) -> dict[str, A
                 "next_page_token": page["meta"]["next_page_token"],
             }
         )
+        if include_selection_meta:
+            selections[-1]["availability"] = page["meta"]
     return {
         "county_fips": request.county_fips,
         "selections": selections,

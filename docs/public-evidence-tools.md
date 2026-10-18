@@ -1,8 +1,11 @@
-# Public evidence tool contract
+# Original public evidence tool contracts
+
+The full catalog now contains nine tools; see [the five research additions](research-tools.md).
+The original four contracts documented here remain unchanged.
 
 Audience: public-health epidemiologists/researchers and developers of AI research
 applications. Anonymous public evidence only. Tool descriptions and schemas are
-registered deterministically alongside `atlas_resolve_geographies`: exactly four tools.
+registered deterministically alongside `atlas_resolve_geographies`: four original tools.
 MCP #27 intentionally retires `server_status` and `atlas_smoke_test`, breaking
 clients that invoke them. The SDK rejects both names as unknown tools; no alias
 is provided. This supersedes earlier operational inventory decisions while

@@ -34,6 +34,8 @@ def digest(value: Any) -> str:
 
 def test_raw_output_constraints_and_scientific_bundle_unchanged() -> None:
     for tool in discover_catalog():
+        if tool["name"] not in REVIEW["tools"]:
+            continue  # #25 applies to the four pre-existing tool contracts only.
         receipt = REVIEW["tools"][tool["name"]]
         assert digest(constraints(tool.get("outputSchema"))) == receipt["before_constraints_sha256"]
     # Git checks out CRLF on Windows; compare canonical repository LF bytes.

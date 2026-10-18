@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Iterator
+from typing import Any
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -75,6 +76,11 @@ def test_http_discovery_input_descriptions(running_server: int) -> None:
                 "atlas_get_county_profile",
                 "atlas_get_evidence_provenance",
                 "atlas_resolve_geographies",
+                "atlas_compare_counties",
+                "atlas_get_surveillance_priority",
+                "atlas_get_atlas_scores",
+                "atlas_review_state",
+                "atlas_build_evidence_brief",
             }
             discovery = tools["atlas_discover_indicators"].input_schema["properties"]
             assert "published indicator ID" in discovery["indicator_id"]["description"]
@@ -109,3 +115,36 @@ def test_http_discovery_input_descriptions(running_server: int) -> None:
             assert all("description" not in field for field in requested_output.values())
 
     asyncio.run(discover())
+
+
+def test_official_sdk_invokes_all_five_research_tools(running_server: int) -> None:
+    async def invoke() -> None:
+        import json
+
+        from jsonschema import Draft202012Validator
+
+        cases: dict[str, dict[str, Any]] = {
+            "atlas_compare_counties": {
+                "county_fips": ["01001", "01003"],
+                "selections": [{"measure_id": "case_count_floor_2023", "year": 2023}],
+            },
+            "atlas_get_surveillance_priority": {"county_fips": ["09110"]},
+            "atlas_get_atlas_scores": {"county_fips": ["09110"]},
+            "atlas_review_state": {"state": "CT"},
+            "atlas_build_evidence_brief": {
+                "county_fips": "01001",
+                "selections": [{"measure_id": "case_count_floor_2023", "year": 2023}],
+            },
+        }
+        async with Client(f"http://127.0.0.1:{running_server}/mcp", mode="legacy") as client:
+            schemas = {t.name: t.output_schema for t in (await client.list_tools()).tools}
+            for name, args in cases.items():
+                result = await client.call_tool(name, args)
+                assert not result.is_error and result.structured_content is not None, result
+                schema = schemas[name]
+                assert schema is not None
+                Draft202012Validator(schema).validate(result.structured_content)
+                assert result.content[0].type == "text"
+                assert json.loads(result.content[0].text) == result.structured_content
+
+    asyncio.run(invoke())

@@ -16,8 +16,14 @@ from atlas_lyme_mcp.application.public_schema import validate
 REQUEST_ID: ContextVar[str] = ContextVar("atlas_http_request_id", default="unavailable")
 TRACEPARENT: ContextVar[str | None] = ContextVar("atlas_traceparent", default=None)
 MAX_BYTES = 256 * 1024
-COLLECTIONS = {"indicators", "measures", "observations"}
-DETAILS = {"sources", "methodologies"}
+COLLECTIONS = {"indicators", "measures", "observations", "atlas_metadata"}
+DETAILS = {"sources", "methodologies", "priority_availability", "county_detail", "state_review"}
+RESEARCH_PATHS = {
+    "priority_availability": "/v1/counties/{reference}/tier1-surveillance-priority/availability",
+    "county_detail": "/v1/counties/{reference}",
+    "state_review": "/v1/states/{reference}/review",
+    "atlas_metadata": "/v1/atlas/metadata",
+}
 SAFE_CODES = {
     "INVALID_REQUEST",
     "RESOURCE_NOT_FOUND",
@@ -43,8 +49,25 @@ class AtlasClient:
         self.origin = origin
         self.transport = transport
         self.calls: deque[float] = deque()
+        self.active = 0
 
     async def get(
+        self,
+        resource: str,
+        params: dict[str, str | int] | None,
+        contract: str,
+        reference: str | None = None,
+    ) -> dict[str, Any]:
+        # Shared across every tool: concurrency never multiplies downstream requests.
+        if self.active >= 3:
+            raise RetrievalError("RATE_LIMITED", True, 1)
+        self.active += 1
+        try:
+            return await self._get(resource, params, contract, reference)
+        finally:
+            self.active -= 1
+
+    async def _get(
         self,
         resource: str,
         params: dict[str, str | int] | None,
@@ -59,6 +82,12 @@ class AtlasClient:
             r"[A-Za-z0-9][A-Za-z0-9_.:@-]{0,127}", reference
         ):
             raise RetrievalError("INVALID_REQUEST")
+        if resource in {"priority_availability", "county_detail"} and not re.fullmatch(
+            r"[0-9]{5}", reference or ""
+        ):
+            raise RetrievalError("INVALID_REQUEST")
+        if resource == "state_review" and not re.fullmatch(r"[A-Z]{2}", reference or ""):
+            raise RetrievalError("INVALID_REQUEST")
         allowed = {
             "indicators": {"indicator_id", "page_size", "page_token"},
             "measures": {"indicator_id", "page_size", "page_token"},
@@ -72,6 +101,10 @@ class AtlasClient:
                 "page_size",
                 "page_token",
             },
+            "atlas_metadata": set(),
+            "priority_availability": set(),
+            "county_detail": {"dataset_version"},
+            "state_review": {"dataset_version"},
             "sources": set(),
             "methodologies": set(),
         }
@@ -85,6 +118,8 @@ class AtlasClient:
             raise RetrievalError("RATE_LIMITED", True, 60)
         self.calls.append(now)
         path = f"/v1/{resource}" + (f"/{reference}" if reference else "")
+        if resource in RESEARCH_PATHS:
+            path = RESEARCH_PATHS[resource].format(reference=reference)
         headers = {"Accept": "application/json", "X-Request-ID": REQUEST_ID.get()}
         if traceparent := TRACEPARENT.get():
             headers["traceparent"] = traceparent

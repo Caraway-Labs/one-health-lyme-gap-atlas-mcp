@@ -198,7 +198,19 @@ class EvidenceTools:
         try:
             async with asyncio.timeout(20):
                 value = await operation
-                Draft202012Validator(output_schema(name)).validate(value)
+                from atlas_lyme_mcp.tools.research import output_schema as research_schema
+
+                contract = (
+                    output_schema(name)
+                    if name
+                    in {
+                        "atlas_discover_indicators",
+                        "atlas_get_county_profile",
+                        "atlas_get_evidence_provenance",
+                    }
+                    else research_schema(name)
+                )
+                Draft202012Validator(contract).validate(value)
                 encoded = json.dumps(value, ensure_ascii=False, allow_nan=False)
                 if len(encoded.encode()) > MAX_BYTES:
                     raise RetrievalError("RESULT_TOO_LARGE")

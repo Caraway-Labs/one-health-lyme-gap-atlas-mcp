@@ -16,6 +16,7 @@ from atlas_lyme_mcp.config import Settings
 from atlas_lyme_mcp.protection import PublicProtection
 from atlas_lyme_mcp.tools.evidence import EvidenceTools
 from atlas_lyme_mcp.tools.geographies import geography_tool
+from atlas_lyme_mcp.tools.research import registered as research_tools
 
 
 def create_server(settings: Settings | None = None, client: AtlasClient | None = None) -> MCPServer:
@@ -24,10 +25,12 @@ def create_server(settings: Settings | None = None, client: AtlasClient | None =
     # SDK configures INFO logging; HTTP client URLs include arguments/cursors.
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("mcp.server.transport_security").setLevel(logging.ERROR)
+    evidence_tools = EvidenceTools(client or AtlasClient(settings.api_origin))
     mcp = MCPServer(
         "atlas-lyme-mcp",
         version=__version__,
-        tools=EvidenceTools(client or AtlasClient(settings.api_origin)).registered()
+        tools=evidence_tools.registered()
+        + research_tools(evidence_tools)
         + [geography_tool(GeographyResolver())],
     )
 

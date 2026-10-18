@@ -8,7 +8,7 @@ from typing import Any
 from mcp import Client
 
 from atlas_lyme_mcp.application.client import AtlasClient
-from atlas_lyme_mcp.check_client import verify_client, verify_health
+from atlas_lyme_mcp.check_client import EXPECTED_TOOLS, verify_client, verify_health
 
 
 async def verify() -> None:
@@ -22,12 +22,7 @@ async def verify() -> None:
     async with Client(url, mode="legacy") as client:
         identity = await verify_client(client)
         names = {tool.name for tool in (await client.list_tools()).tools}
-        assert names == {
-            "atlas_discover_indicators",
-            "atlas_get_county_profile",
-            "atlas_get_evidence_provenance",
-            "atlas_resolve_geographies",
-        }
+        assert names == EXPECTED_TOOLS
         receipts: dict[str, Any] = {
             "identity": identity,
             "endpoint": url,
