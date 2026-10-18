@@ -106,8 +106,8 @@ and keep #35 open until all five tools and deployed acceptance succeed.
 
 ## Rollout and rollback
 
-Owner review of the new public contract and bounded budgets is required before
-merge/deployment (ADR 0005). Use the existing controlled DigitalOcean flow; do not
+Owner review of the new public contract and bounded budgets was recorded on
+2026-10-18 (accepted ADR 0005). Use the existing controlled DigitalOcean flow; do not
 change app topology, access, credentials, source admission or other production jobs.
 Deploy only the reviewed merged SHA. Verify that SHA from App Platform, health,
 raw catalog parity, official SDK invocation and bounded API/MCP parity on both hosts.

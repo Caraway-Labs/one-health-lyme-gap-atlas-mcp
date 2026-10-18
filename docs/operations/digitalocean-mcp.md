@@ -4,7 +4,7 @@ This runbook retains historical Epic #4 receipts and the existing release proced
 MCP #27 supersedes the operational inventory: exactly nine domain tools are
 exposed. `server_status` and `atlas_smoke_test` are intentionally removed, a
 backward-incompatible change for their callers; the SDK returns unknown-tool
-errors without aliases. Historical ADRs and receipts below describe past releases. ADR 0003 authorizes the original evidence tools; proposed ADR 0005 covers the five research additions and requires owner review; see [the current contract](../public-evidence-tools.md). Database connections, private APIs, inference and writes remain excluded. Use both branded and starter HTTPS endpoints.
+errors without aliases. Historical ADRs and receipts below describe past releases. ADR 0003 authorizes the original evidence tools; accepted ADR 0005 covers the five research additions with owner approval recorded; see [the current contract](../public-evidence-tools.md). Database connections, private APIs, inference and writes remain excluded. Use both branded and starter HTTPS endpoints.
 
 ## Architecture and configuration
 

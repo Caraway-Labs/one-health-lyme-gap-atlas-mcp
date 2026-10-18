@@ -1,6 +1,6 @@
 # 0005: Five bounded public evidence research tools
 
-Status: Proposed
+Status: Accepted
 Date: 2026-10-18
 Decision owner: Atlas product and engineering owner
 
@@ -25,9 +25,12 @@ budgets and published schemas are unchanged. Incomplete pagination/provenance fa
 explicitly instead of silently omitting evidence. Synchronize the API's optional
 collection availability metadata through a separate pinned schema bundle.
 
-This proposed decision and public contract require owner review before merge and
-production release under the workspace technology/governance human-review rule.
-Independent code peer review supplements that owner decision.
+Matthew approved this decision and the stated public contracts/budgets in the task
+conversation on 2026-10-18: "Yes, I approve. Please proceed." The approval explicitly
+covers merge, production deployment and deployed acceptance with existing global
+limits unchanged. See the [agent-recorded approval receipt](https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-mcp/pull/40#issuecomment-6254459648). This records
+conversation approval; it is not a GitHub review submitted as the owner.
+Independent code peer review found no remaining blocking issues.
 
 ## Consequences and alternatives
 
