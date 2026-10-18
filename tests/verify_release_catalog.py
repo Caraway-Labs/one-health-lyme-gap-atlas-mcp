@@ -53,7 +53,7 @@ def verify() -> None:
         expected = {tool["name"]: tool for tool in discover_catalog()}
         actual = {tool["name"]: tool for tool in result["tools"]}
         assert actual == expected, "Remote metadata differs from reviewed local app"
-        print(f"{url}: four complete tool contracts match reviewed app and baseline")
+        print(f"{url}: nine complete tool contracts match reviewed app and baseline")
 
 
 if __name__ == "__main__":

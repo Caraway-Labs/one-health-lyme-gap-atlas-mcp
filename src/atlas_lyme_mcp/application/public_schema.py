@@ -12,11 +12,24 @@ DOCUMENT = json.loads(
 )
 
 
+RESEARCH_DOCUMENT = json.loads(
+    (Path(__file__).parents[1] / "contracts" / "research-api-schema.json").read_text()
+)
+
+
 def schema(name: str) -> dict[str, Any]:
+    if name.startswith("research:"):
+        return {
+            "$ref": f"#/components/schemas/{name.split(':')[1]}",
+            "components": RESEARCH_DOCUMENT["components"],
+        }
     return {"$ref": f"#/components/schemas/{name}", "components": DOCUMENT["components"]}
 
 
 def validate(name: str, value: Any) -> None:
+    # Reviewed additive API collection availability metadata. Legacy output schemas stay frozen.
+    if name == "CollectionEnvelope_Observation_":
+        name = "research:" + name
     contract = copy.deepcopy(schema(name))
 
     def close_known_objects(node: Any) -> None:

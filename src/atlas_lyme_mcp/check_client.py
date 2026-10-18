@@ -1,4 +1,4 @@
-"""Official SDK check: protocol, four contracts, domain execution and HTTP health."""
+"""Official SDK check: protocol, nine contracts, domain execution and HTTP health."""
 
 import asyncio
 import json
@@ -15,6 +15,11 @@ EXPECTED_TOOLS = frozenset(
         "atlas_get_county_profile",
         "atlas_get_evidence_provenance",
         "atlas_resolve_geographies",
+        "atlas_compare_counties",
+        "atlas_get_surveillance_priority",
+        "atlas_get_atlas_scores",
+        "atlas_review_state",
+        "atlas_build_evidence_brief",
     }
 )
 RETIRED_TOOLS = ("server_status", "atlas_smoke_test")
@@ -26,7 +31,7 @@ async def verify_client(client: Client) -> dict[str, object]:
         raise RuntimeError("MCP initialization did not negotiate a protocol version")
     tools = (await client.list_tools()).tools
     names = [tool.name for tool in tools]
-    if len(names) != 4 or set(names) != EXPECTED_TOOLS:
+    if len(names) != 9 or set(names) != EXPECTED_TOOLS:
         raise RuntimeError(f"Unexpected tool list: {sorted(names)}")
     for tool in tools:
         Draft202012Validator.check_schema(tool.input_schema)

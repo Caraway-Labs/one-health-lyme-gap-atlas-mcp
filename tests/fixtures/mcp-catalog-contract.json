@@ -1,11 +1,5 @@
 {
   "atlas_discover_indicators": {
-    "annotations": {
-      "destructiveHint": false,
-      "idempotentHint": true,
-      "openWorldHint": true,
-      "readOnlyHint": true
-    },
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
@@ -23,20 +17,6 @@
           ],
           "default": null,
           "title": "Indicator Id"
-        },
-        "measure_page_token": {
-          "anyOf": [
-            {
-              "maxLength": 2048,
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Measure Page Token"
         },
         "page_size": {
           "default": 3,
@@ -58,20 +38,34 @@
           ],
           "default": null,
           "title": "Page Token"
+        },
+        "measure_page_token": {
+          "anyOf": [
+            {
+              "maxLength": 2048,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Measure Page Token"
         }
       },
       "title": "DiscoveryArguments",
       "type": "object"
     },
-    "outputSchema": "586dab68c5b06c54f00d6f6fd48585e4da3b0385306bd3557ec3a6efd02e1d5b"
-  },
-  "atlas_get_county_profile": {
+    "outputSchema": "586dab68c5b06c54f00d6f6fd48585e4da3b0385306bd3557ec3a6efd02e1d5b",
     "annotations": {
+      "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
-      "openWorldHint": true,
-      "readOnlyHint": true
-    },
+      "openWorldHint": true
+    }
+  },
+  "atlas_get_county_profile": {
     "inputSchema": {
       "$defs": {
         "Selection": {
@@ -108,10 +102,10 @@
                 ]
               },
               "properties": {
-                "end_date": {
+                "start_date": {
                   "type": "string"
                 },
-                "start_date": {
+                "end_date": {
                   "type": "string"
                 }
               },
@@ -122,52 +116,12 @@
             }
           ],
           "properties": {
-            "end_date": {
-              "anyOf": [
-                {
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "title": "End Date"
-            },
             "measure_id": {
               "maxLength": 128,
               "minLength": 1,
               "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
               "title": "Measure Id",
               "type": "string"
-            },
-            "page_token": {
-              "anyOf": [
-                {
-                  "maxLength": 2048,
-                  "minLength": 1,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "title": "Page Token"
-            },
-            "start_date": {
-              "anyOf": [
-                {
-                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "title": "Start Date"
             },
             "year": {
               "anyOf": [
@@ -182,6 +136,46 @@
               ],
               "default": null,
               "title": "Year"
+            },
+            "start_date": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Start Date"
+            },
+            "end_date": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "End Date"
+            },
+            "page_token": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Page Token"
             }
           },
           "required": [
@@ -217,23 +211,24 @@
       "title": "ProfileArguments",
       "type": "object"
     },
-    "outputSchema": "9e969a4870e8c99c0a8601e848af37bfe410a38b6c212077bbf7fc262b6b1f4e"
-  },
-  "atlas_get_evidence_provenance": {
+    "outputSchema": "9e969a4870e8c99c0a8601e848af37bfe410a38b6c212077bbf7fc262b6b1f4e",
     "annotations": {
+      "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
-      "openWorldHint": true,
-      "readOnlyHint": true
-    },
+      "openWorldHint": true
+    }
+  },
+  "atlas_get_evidence_provenance": {
     "inputSchema": {
       "additionalProperties": false,
       "properties": {
-        "expected_release_id": {
-          "maxLength": 128,
-          "minLength": 1,
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
-          "title": "Expected Release Id",
+        "reference_type": {
+          "enum": [
+            "source",
+            "methodology"
+          ],
+          "title": "Reference Type",
           "type": "string"
         },
         "reference_id": {
@@ -243,12 +238,11 @@
           "title": "Reference Id",
           "type": "string"
         },
-        "reference_type": {
-          "enum": [
-            "source",
-            "methodology"
-          ],
-          "title": "Reference Type",
+        "expected_release_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
+          "title": "Expected Release Id",
           "type": "string"
         }
       },
@@ -260,15 +254,15 @@
       "title": "ProvenanceArguments",
       "type": "object"
     },
-    "outputSchema": "5f65a6623d9f5f130a4d5bb52ef1ba3c2604da1475034554908e2691cbe889e3"
-  },
-  "atlas_resolve_geographies": {
+    "outputSchema": "5f65a6623d9f5f130a4d5bb52ef1ba3c2604da1475034554908e2691cbe889e3",
     "annotations": {
+      "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
-      "openWorldHint": true,
-      "readOnlyHint": true
-    },
+      "openWorldHint": true
+    }
+  },
+  "atlas_resolve_geographies": {
     "inputSchema": {
       "$defs": {
         "GeographyRequest": {
@@ -319,6 +313,21 @@
             }
           ],
           "properties": {
+            "county_fips": {
+              "anyOf": [
+                {
+                  "maxLength": 5,
+                  "minLength": 5,
+                  "pattern": "^[0-9]{5}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "County Fips"
+            },
             "county": {
               "anyOf": [
                 {
@@ -336,21 +345,6 @@
               ],
               "default": null,
               "title": "County"
-            },
-            "county_fips": {
-              "anyOf": [
-                {
-                  "maxLength": 5,
-                  "minLength": 5,
-                  "pattern": "^[0-9]{5}$",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "default": null,
-              "title": "County Fips"
             },
             "state": {
               "anyOf": [
@@ -393,6 +387,441 @@
       "title": "GeographyArguments",
       "type": "object"
     },
-    "outputSchema": "62b11d3599fde56a55b40569b97506a8477534afe02e3bddf04b680f2f733558"
+    "outputSchema": "62b11d3599fde56a55b40569b97506a8477534afe02e3bddf04b680f2f733558",
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  "atlas_compare_counties": {
+    "inputSchema": {
+      "$defs": {
+        "Selection": {
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "start_date"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "end_date"
+                    ]
+                  }
+                ]
+              },
+              "properties": {
+                "year": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "year"
+              ]
+            },
+            {
+              "not": {
+                "required": [
+                  "year"
+                ]
+              },
+              "properties": {
+                "start_date": {
+                  "type": "string"
+                },
+                "end_date": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "start_date",
+                "end_date"
+              ]
+            }
+          ],
+          "properties": {
+            "measure_id": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
+              "title": "Measure Id",
+              "type": "string"
+            },
+            "year": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 1900,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Year"
+            },
+            "start_date": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Start Date"
+            },
+            "end_date": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "End Date"
+            },
+            "page_token": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Page Token"
+            }
+          },
+          "required": [
+            "measure_id"
+          ],
+          "title": "Selection",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "county_fips": {
+          "items": {
+            "maxLength": 5,
+            "minLength": 5,
+            "pattern": "^[0-9]{5}$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 2,
+          "title": "County Fips",
+          "type": "array"
+        },
+        "selections": {
+          "items": {
+            "$ref": "#/$defs/Selection"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Selections",
+          "type": "array"
+        }
+      },
+      "required": [
+        "county_fips",
+        "selections"
+      ],
+      "title": "CompareArguments",
+      "type": "object"
+    },
+    "outputSchema": "55031882be888dd656a8e41341b4ec5ffdee441ecedc4faa7d107262e636a3dc",
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  "atlas_get_surveillance_priority": {
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "county_fips": {
+          "items": {
+            "maxLength": 5,
+            "minLength": 5,
+            "pattern": "^[0-9]{5}$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "County Fips",
+          "type": "array"
+        }
+      },
+      "required": [
+        "county_fips"
+      ],
+      "title": "CountiesArguments",
+      "type": "object"
+    },
+    "outputSchema": "efa757a081113ae4682b8c0734667454440291d38c70ee225928cde7bccd84ea",
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  "atlas_get_atlas_scores": {
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "county_fips": {
+          "items": {
+            "maxLength": 5,
+            "minLength": 5,
+            "pattern": "^[0-9]{5}$",
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 1,
+          "title": "County Fips",
+          "type": "array"
+        },
+        "dataset_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Version"
+        }
+      },
+      "required": [
+        "county_fips"
+      ],
+      "title": "ScoresArguments",
+      "type": "object"
+    },
+    "outputSchema": "014f60accc5e885ae49cae672d9d52401d290cc0f8f6985da2052e46983fdff8",
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  "atlas_review_state": {
+    "inputSchema": {
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "pattern": "^(AL|AK|AZ|AR|CA|CO|CT|DE|DC|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$",
+          "title": "State",
+          "type": "string"
+        },
+        "dataset_version": {
+          "anyOf": [
+            {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dataset Version"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "title": "ReviewArguments",
+      "type": "object"
+    },
+    "outputSchema": "4aa8b1b709b25bbdb60a435b149b3e3fec0ceef401934987f3f95d5ce2ae0e5e",
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  "atlas_build_evidence_brief": {
+    "inputSchema": {
+      "$defs": {
+        "Selection": {
+          "additionalProperties": false,
+          "oneOf": [
+            {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "start_date"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "end_date"
+                    ]
+                  }
+                ]
+              },
+              "properties": {
+                "year": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "year"
+              ]
+            },
+            {
+              "not": {
+                "required": [
+                  "year"
+                ]
+              },
+              "properties": {
+                "start_date": {
+                  "type": "string"
+                },
+                "end_date": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "start_date",
+                "end_date"
+              ]
+            }
+          ],
+          "properties": {
+            "measure_id": {
+              "maxLength": 128,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:@-]*$",
+              "title": "Measure Id",
+              "type": "string"
+            },
+            "year": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 1900,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Year"
+            },
+            "start_date": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Start Date"
+            },
+            "end_date": {
+              "anyOf": [
+                {
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "End Date"
+            },
+            "page_token": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Page Token"
+            }
+          },
+          "required": [
+            "measure_id"
+          ],
+          "title": "Selection",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "county_fips": {
+          "maxLength": 5,
+          "minLength": 5,
+          "pattern": "^[0-9]{5}$",
+          "title": "County Fips",
+          "type": "string"
+        },
+        "selections": {
+          "items": {
+            "$ref": "#/$defs/Selection"
+          },
+          "maxItems": 3,
+          "minItems": 1,
+          "title": "Selections",
+          "type": "array"
+        }
+      },
+      "required": [
+        "county_fips",
+        "selections"
+      ],
+      "title": "BriefArguments",
+      "type": "object"
+    },
+    "outputSchema": "ddbafa7c9d1d0642ff71f8839b46577dfc5a9191f043f8c0d14f711a1da94d02",
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": true
+    }
   }
 }

@@ -46,6 +46,11 @@ def test_all_tools_have_strict_input_and_canonical_output_schemas() -> None:
         "atlas_get_county_profile",
         "atlas_get_evidence_provenance",
         "atlas_resolve_geographies",
+        "atlas_compare_counties",
+        "atlas_get_surveillance_priority",
+        "atlas_get_atlas_scores",
+        "atlas_review_state",
+        "atlas_build_evidence_brief",
     }
     for tool in tools:
         if tool.name.startswith("atlas_"):

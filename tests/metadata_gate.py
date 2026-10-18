@@ -17,6 +17,11 @@ EXPECTED_TOOLS = frozenset(
         "atlas_get_county_profile",
         "atlas_get_evidence_provenance",
         "atlas_resolve_geographies",
+        "atlas_compare_counties",
+        "atlas_get_surveillance_priority",
+        "atlas_get_atlas_scores",
+        "atlas_review_state",
+        "atlas_build_evidence_brief",
     }
 )
 DOMAIN_TOOLS = EXPECTED_TOOLS
