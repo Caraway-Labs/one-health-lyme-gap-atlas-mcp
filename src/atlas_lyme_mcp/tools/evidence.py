@@ -13,7 +13,7 @@ from mcp_types import CallToolResult, TextContent, ToolAnnotations
 
 from atlas_lyme_mcp.application import evidence
 from atlas_lyme_mcp.application.client import MAX_BYTES, REQUEST_ID, AtlasClient, RetrievalError
-from atlas_lyme_mcp.application.public_schema import DOCUMENT
+from atlas_lyme_mcp.application.public_schema import DOCUMENT, context_components
 from atlas_lyme_mcp.tools.contracts import (
     DiscoveryArguments,
     ProfileArguments,
@@ -54,10 +54,28 @@ def output_schema(name: str) -> dict[str, Any]:
                     "properties": {
                         "observations": array("Observation", 31),
                         "retrieval_state": {"enum": ["returned", "empty"]},
+                        "availability": {
+                            "$ref": "#/components/schemas/Context_CollectionMeta",
+                            "description": (
+                                "Original API selection metadata, including availability "
+                                "and limitations when supplied."
+                            ),
+                        },
                     },
                 },
             },
             "meta": meta,
+        }
+        properties["selections"]["items"]["properties"]["observations"]["items"] = {
+            "oneOf": [
+                {
+                    "allOf": [
+                        {"$ref": "#/components/schemas/Observation"},
+                        {"not": {"required": ["county_context"]}},
+                    ]
+                },
+                {"$ref": "#/components/schemas/Context_CountyContextObservation"},
+            ]
         }
     else:
         properties = {
@@ -177,7 +195,9 @@ def output_schema(name: str) -> dict[str, Any]:
         "additionalProperties": False,
         "required": list(properties),
         "properties": properties,
-        "components": DOCUMENT["components"],
+        "components": {"schemas": {**DOCUMENT["components"]["schemas"], **context_components()}}
+        if name == "atlas_get_county_profile"
+        else DOCUMENT["components"],
     }
 
 
@@ -263,7 +283,9 @@ class EvidenceTools:
             """Discover published Atlas indicators and associated measures, preserving units,
             denominators, geography/time semantics, versions and limitations. Discovery is
             not county availability. Continue indicator pages with page_token; continue a
-            measure page with indicator_id and its measure_page_tokens entry."""
+            measure page with indicator_id and its measure_page_tokens entry. Read each
+            measure's temporal semantics: annual year, cumulative exact dates, or county
+            context vintage_year; never substitute one for another."""
             request = DiscoveryArguments(
                 indicator_id=indicator_id,
                 page_size=page_size,
@@ -278,7 +300,9 @@ class EvidenceTools:
             county_fips: str, selections: list[Selection]
         ) -> CallToolResult:
             """Retrieve published evidence for one exact five-digit county FIPS and 1–3 explicit
-            measure-period selections (year OR inclusive dates, max 31 days). Preserve values,
+            measure-period selections (year OR inclusive dates, max 31 days, OR vintage_year).
+            For scapularis_status/burgdorferi_status use start_date=end_date=2025-12-31;
+            for population_2022 use vintage_year=2022, not year. Preserve values,
             missingness, units and provenance. Independent periods do not establish scientific
             comparability. No scores, inferred county names, risk or biological absence claims.
             Continue a selection using its next_page_token with the same county/measure/period."""

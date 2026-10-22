@@ -67,7 +67,12 @@ async def profile(
     for selection in request.selections:
         query = selection.model_dump(exclude_none=True)
         query.update(geography_type="county", geography_id=request.county_fips, page_size=31)
-        page = await client.get("observations", query, "CollectionEnvelope_Observation_")
+        contract = (
+            "context:CollectionEnvelope_CountyContextObservation_"
+            if selection.vintage_year is not None
+            else "CollectionEnvelope_Observation_"
+        )
+        page = await client.get("observations", query, contract)
         observations = page["data"]
         if len(observations) > 31:
             raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
@@ -75,12 +80,16 @@ async def profile(
         start = (
             date(selection.year, 1, 1)
             if selection.year
-            else date.fromisoformat(selection.start_date or "")
+            else date.fromisoformat(selection.start_date)
+            if selection.start_date
+            else None
         )
         end = (
             date(selection.year, 12, 31)
             if selection.year
-            else date.fromisoformat(selection.end_date or "")
+            else date.fromisoformat(selection.end_date)
+            if selection.end_date
+            else None
         )
         ids: set[str] = set()
         for item in observations:
@@ -88,15 +97,35 @@ async def profile(
                 item["measure_id"] != selection.measure_id
                 or item["geography"]
                 != {"geography_type": "county", "geography_id": request.county_fips}
-                or not start
-                <= date.fromisoformat(item["period_start"])
-                <= date.fromisoformat(item["period_end"])
-                <= end
+                or (
+                    selection.vintage_year is None
+                    and not (
+                        start is not None
+                        and end is not None
+                        and start
+                        <= date.fromisoformat(item["period_start"])
+                        <= date.fromisoformat(item["period_end"])
+                        <= end
+                    )
+                )
                 or item["observation_id"] in ids
                 or item["evidence"]["resource_id"] != item["observation_id"]
                 or item["evidence"]["release_id"] != item["release_id"]
             ):
                 raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
+            if selection.vintage_year is not None:
+                if item["county_context"]["vintage_year"] != selection.vintage_year:
+                    raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
+                if item["temporal_grain"] == "VINTAGE_YEAR":
+                    if item["period_start"] is not None or item["period_end"] is not None:
+                        raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
+                elif (
+                    item["period_start"] is None
+                    or item["period_end"] is None
+                    or date.fromisoformat(item["period_start"])
+                    > date.fromisoformat(item["period_end"])
+                ):
+                    raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
             ids.add(item["observation_id"])
             # These are transport fidelity invariants from canonical Observation validation.
             state, value = item["value_state"], item["value"]
@@ -117,10 +146,9 @@ async def profile(
                 "observations": observations,
                 "retrieval_state": "returned" if observations else "empty",
                 "next_page_token": page["meta"]["next_page_token"],
+                "availability": page["meta"],
             }
         )
-        if include_selection_meta:
-            selections[-1]["availability"] = page["meta"]
     return {
         "county_fips": request.county_fips,
         "selections": selections,

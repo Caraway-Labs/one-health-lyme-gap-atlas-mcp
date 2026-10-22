@@ -1,7 +1,7 @@
 # Original public evidence tool contracts
 
 The full catalog now contains nine tools; see [the five research additions](research-tools.md).
-The original four contracts documented here remain unchanged.
+The original tools are documented here with the reviewed MCP #42 context extension below.
 
 Audience: public-health epidemiologists/researchers and developers of AI research
 applications. Anonymous public evidence only. Tool descriptions and schemas are
@@ -23,11 +23,20 @@ measure page with exact `indicator_id` and `measure_page_token`, excluding
 Discovery states published definitions, never county availability. Empty selections
 return empty lists and unknown/null release identity; do not fabricate availability.
 
-`atlas_get_county_profile`: exact five ASCII-digit `county_fips`, plus 1–3 unique
+`atlas_get_county_profile`: exact five ASCII-digit `county_fips`, plus 1-3 unique
 `selections`, each containing exact `measure_id`, `year` OR inclusive `start_date`
-and `end_date`, and optional `page_token`. Explicit date ranges cover at most 31
+and `end_date` OR `vintage_year`, and optional `page_token`. Explicit date ranges cover at most 31
 days. Each selection fetches at most 31 observations, with a continuation token.
 Annual selection does not coerce cumulative evidence into an annual measure.
+`scapularis_status` and `burgdorferi_status` require the published cumulative
+selection `start_date=end_date=2025-12-31`, never an annual year. County context
+requires `vintage_year=2022` for `population_2022`, `svi_percentile_2022`,
+`uninsured_percent_2022`, and `uninsured_percentile_2022`; `rucc_2023` requires
+`vintage_year=2023`. Vintage excludes all annual/date fields. Invalid selections
+fail with corrective validation guidance before retrieval; no date is substituted.
+Population/SVI/insurance preserve their ACS 2018-2022 reference period. RUCC
+preserves null dates and its authoritative category label, never an annual period.
+These are descriptive county context, not causal or individual-risk evidence.
 Returns `county_fips`, `selections` (original request, canonical observations,
 `retrieval_state=returned|empty`, `next_page_token`) and `meta` with release and
 response time. Different selection periods remain independent; they establish no
@@ -171,3 +180,28 @@ New schema declarations for existing wrapper fields are annotation-only (no new
 property declarations yields exactly the prior validation contract. Scientific
 components remain pinned and byte-for-byte unchanged; missing scientific prose
 belongs to separately reviewed API work, followed by an explicit synchronization.
+
+## Reviewed vintage/context extension (MCP #42)
+
+This explicit contract revision adds the mutually exclusive vintage selection to
+profile, comparison and brief inputs, and a separately typed county-context
+observation alternative to their outputs. Existing dated Observation components
+remain unchanged. `contracts/context-api-schema.json` pins the complete reachable
+context collection from API commit `1c3979acd0618d6f2db9477d9766237683d907ce`,
+with the export digest. Output schemas namespace these canonical components to
+avoid replacing any older dated component. The required `county_context` field
+discriminates context rows; runtime validation selects the canonical collection
+from the requested selection rather than guessing from a response.
+
+Preserve county_context vintage, source field, definition, category label, allowed
+states and metadata methodology alongside all original source/evidence/version
+references and limitations. Response fidelity verifies the requested county,
+measure and vintage, release, evidence identity and valid original period shape.
+Null category dates are not fabricated. The profile input/output and three
+research input/output catalog snapshots intentionally change; scientific dated
+schemas, geography input, inventory, annotations and service budgets do not.
+
+Regression fixtures prove transport behavior, not published availability.
+Real-client Pennsylvania workflow acceptance on both approved hostnames remains
+required after exact-SHA deployment. This extension implements the already
+accepted API vintage contract (API ADR 0018), not a new source or score method.

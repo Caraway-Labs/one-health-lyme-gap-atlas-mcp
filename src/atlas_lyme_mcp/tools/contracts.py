@@ -36,6 +36,16 @@ Cursor = Annotated[
     ),
 ]
 
+# Published API selection contracts, not inferred observation periods.
+CONTEXT_VINTAGES = {
+    "population_2022": 2022,
+    "svi_percentile_2022": 2022,
+    "uninsured_percent_2022": 2022,
+    "uninsured_percentile_2022": 2022,
+    "rucc_2023": 2023,
+}
+CUMULATIVE_MEASURES = {"scapularis_status", "burgdorferi_status"}
+
 
 class StrictArguments(ArgModelBase):
     model_config = ConfigDict(extra="forbid", strict=True)
@@ -102,7 +112,13 @@ class Selection(BaseModel):
                 {
                     "required": ["year"],
                     "properties": {"year": {"type": "integer"}},
-                    "not": {"anyOf": [{"required": ["start_date"]}, {"required": ["end_date"]}]},
+                    "not": {
+                        "anyOf": [
+                            {"required": ["start_date"]},
+                            {"required": ["end_date"]},
+                            {"required": ["vintage_year"]},
+                        ]
+                    },
                 },
                 {
                     "required": ["start_date", "end_date"],
@@ -110,7 +126,18 @@ class Selection(BaseModel):
                         "start_date": {"type": "string"},
                         "end_date": {"type": "string"},
                     },
-                    "not": {"required": ["year"]},
+                    "not": {"anyOf": [{"required": ["year"]}, {"required": ["vintage_year"]}]},
+                },
+                {
+                    "required": ["vintage_year"],
+                    "properties": {"vintage_year": {"type": "integer"}},
+                    "not": {
+                        "anyOf": [
+                            {"required": ["year"]},
+                            {"required": ["start_date"]},
+                            {"required": ["end_date"]},
+                        ]
+                    },
                 },
             ]
         },
@@ -129,8 +156,21 @@ class Selection(BaseModel):
         description=(
             "Calendar year, integer 1900–2100, selecting January 1 through December 31. "
             "Supply year OR both start_date and end_date, never both representations. "
+            "Omit when using vintage_year. Cumulative tick status uses exact dates "
+            "2025-12-31 through 2025-12-31, not year. "
             "Omitted by default; no period is inferred. Does not convert cumulative "
             "evidence into an annual measure. "
+        ),
+    )
+    vintage_year: int | None = Field(
+        default=None,
+        ge=1900,
+        le=2100,
+        description=(
+            "Source product/classification vintage, integer 1900-2100, distinct from an "
+            "annual year. Use 2022 for population_2022 and SVI/insurance 2022 measures, "
+            "or 2023 for rucc_2023. Excludes year and both date fields. Retain the "
+            "publisher's reference period; ACS 2018-2022 is not a single-year observation."
         ),
     )
     start_date: str | None = Field(
@@ -138,7 +178,8 @@ class Selection(BaseModel):
         pattern=r"^\d{4}-\d{2}-\d{2}$",
         description=(
             "Inclusive start date as a valid YYYY-MM-DD calendar date. Required with "
-            "end_date when year is omitted; omit when using year. End must be on or after "
+            "end_date when selecting dates; omit when using year or vintage_year. "
+            "End must be on or after "
             "start, with at most 31 inclusive days. No date is inferred when omitted. "
         ),
     )
@@ -147,7 +188,8 @@ class Selection(BaseModel):
         pattern=r"^\d{4}-\d{2}-\d{2}$",
         description=(
             "Inclusive end date as a valid YYYY-MM-DD calendar date. Required with "
-            "start_date when year is omitted; omit when using year. Must be on or after "
+            "start_date when selecting dates; omit when using year or vintage_year. "
+            "Must be on or after "
             "start_date and at most 30 days later (31 inclusive days). No date is inferred "
             "when omitted. "
         ),
@@ -166,6 +208,13 @@ class Selection(BaseModel):
     @classmethod
     def explicit_period(cls, value: Any) -> Any:
         if isinstance(value, dict):
+            if "vintage_year" in value and (
+                value["vintage_year"] is None
+                or any(k in value for k in ("year", "start_date", "end_date"))
+            ):
+                raise ValueError(
+                    "Use a non-null vintage_year alone, excluding year and date fields"
+                )
             if "year" in value and (
                 value["year"] is None or "start_date" in value or "end_date" in value
             ):
@@ -174,6 +223,25 @@ class Selection(BaseModel):
 
     @model_validator(mode="after")
     def period(self) -> "Selection":
+        if self.measure_id in CONTEXT_VINTAGES:
+            expected = CONTEXT_VINTAGES[self.measure_id]
+            if self.vintage_year != expected or any(
+                v is not None for v in (self.year, self.start_date, self.end_date)
+            ):
+                raise ValueError(
+                    f"{self.measure_id} requires vintage_year={expected}; omit year and dates"
+                )
+            return self
+        if self.vintage_year is not None:
+            raise ValueError("vintage_year is supported only for published county-context measures")
+        if self.measure_id in CUMULATIVE_MEASURES and (
+            self.year is not None
+            or self.start_date != "2025-12-31"
+            or self.end_date != "2025-12-31"
+        ):
+            raise ValueError(
+                f"{self.measure_id} is cumulative; use start_date=end_date=2025-12-31, not year"
+            )
         if self.year is not None:
             if self.start_date is not None or self.end_date is not None:
                 raise ValueError("Use year or complete dates, not both")
@@ -204,7 +272,8 @@ class ProfileArguments(StrictArguments):
         max_length=3,
         description=(
             "Required array of 1–3 unique published measure/period selections for this "
-            "county. Each needs measure_id and either year or both inclusive dates (maximum "
+            "county. Each needs measure_id and either vintage_year, year or both inclusive dates "
+            "(maximum "
             "31 days). Duplicate measure-period pairs are rejected regardless of cursor. "
             "Periods remain independent and do not establish scientific comparability. "
         ),

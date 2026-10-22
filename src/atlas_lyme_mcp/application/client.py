@@ -96,6 +96,7 @@ class AtlasClient:
                 "geography_type",
                 "geography_id",
                 "year",
+                "vintage_year",
                 "start_date",
                 "end_date",
                 "page_size",

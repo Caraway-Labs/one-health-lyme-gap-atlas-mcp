@@ -7,7 +7,7 @@ from mcp.server.mcpserver.tools.base import Tool
 from mcp_types import CallToolResult, ToolAnnotations
 
 from atlas_lyme_mcp.application import research
-from atlas_lyme_mcp.application.public_schema import DOCUMENT, RESEARCH_DOCUMENT
+from atlas_lyme_mcp.application.public_schema import DOCUMENT, RESEARCH_DOCUMENT, context_components
 from atlas_lyme_mcp.tools.contracts import Selection, StrictArguments, StrictMetadata
 from atlas_lyme_mcp.tools.evidence import EvidenceTools
 from atlas_lyme_mcp.tools.research_contracts import (
@@ -39,7 +39,15 @@ def output_schema(name: str) -> dict[str, Any]:
     selection_result = obj(
         {
             "request": Selection.model_json_schema(),
-            "observations": array(ref("Observation"), 31),
+            "observations": array(
+                {
+                    "oneOf": [
+                        {"allOf": [ref("Observation"), {"not": {"required": ["county_context"]}}]},
+                        ref("Context_CountyContextObservation"),
+                    ]
+                },
+                31,
+            ),
             "retrieval_state": {"enum": ["returned", "empty"]},
             "next_page_token": {"type": "null"},
             "availability": ref("CollectionMeta"),
@@ -192,6 +200,7 @@ def output_schema(name: str) -> dict[str, Any]:
         "schemas": {
             **DOCUMENT["components"]["schemas"],
             **RESEARCH_DOCUMENT["components"]["schemas"],
+            **context_components(),
         }
     }
     # Pydantic nested models use root-local definitions.
