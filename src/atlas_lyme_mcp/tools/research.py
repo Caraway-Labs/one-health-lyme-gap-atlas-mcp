@@ -289,6 +289,8 @@ def registered(owner: EvidenceTools) -> list[Tool]:
             ),
         )
         tool.parameters = args.model_json_schema()
-        tool.fn_metadata = StrictMetadata(arg_model=args, output_schema=output_schema(tool.name))
+        tool.fn_metadata = StrictMetadata(
+            tool_name=tool.name, arg_model=args, output_schema=output_schema(tool.name)
+        )
         result.append(tool)
     return result

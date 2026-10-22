@@ -1,0 +1,80 @@
+# MCP research completion and correlation (MCP #45)
+
+HTTP/process health, API HTTP status, MCP tool completion and whole research-task
+completion are separate checks. A 200 API response can be rejected by the MCP
+contract; successful health cannot establish usable research evidence.
+
+## Existing-log operational view
+
+The service writes fixed-field JSON `atlas_mcp_outcome` events to existing stdout.
+`stage=mcp_tool` records validation failures, early capacity rejection, execution
+results and cancellations for all nine tools through the SDK metadata seam.
+`stage=upstream_api` records approved route categories, status and consumer outcome.
+No tool arguments, FIPS, cursors, source text, response bodies, client addresses,
+credentials, private URLs or arbitrary exception strings enter these events.
+Only approved fixed tool/route names, safe codes/reasons, duration, UTC time,
+bounded request ID and validated trace ID are recorded. Existing API request/trace
+headers remain unchanged. Operators can find HTTP-200/contract-invalid pairs by
+request ID and follow the trace ID in the already approved trace store.
+
+Timeout reasons distinguish whole-tool deadline from upstream timeout/transport.
+A returned tool result taking more than 20 seconds is logged as LATE_COMPLETION,
+not an in-budget success; its scientific result is unchanged. This detects CPU
+serialization/validation that can finish after an async deadline. SDK validation
+errors remain non-retryable input errors with their existing corrective guidance.
+Successful geography transport still preserves individual domain outcomes; it
+does not establish scientific availability.
+
+Inspect the existing stdout export without a new backend:
+
+```sh
+uv run python -m atlas_lyme_mcp.operations --minutes 15 --request-id <request-id> < runtime.log
+uv run python -m atlas_lyme_mcp.operations --minutes 15 --fail-on-alert < runtime.log
+```
+
+The bounded view considers at most 10,000 recognized events, rejects over-64-KiB
+lines and unapproved labels, strips arbitrary fields, and separates tool/API
+counts, reasons and p50/p95 latency. Request lookup returns at most 50 safe events.
+The alert exits nonzero when a window has at least five tool calls, at least three
+failures and a failure fraction of at least 20%. This is a simple reviewed
+diagnostic threshold, not an inferred epidemiological or availability conclusion.
+No source change, public metrics endpoint, centralized log service, dashboard
+account, credential, scheduled polling or notification integration is created.
+
+## Opt-in Pennsylvania task check
+
+From the exact reviewed checkout, independently verify the active App Platform
+source SHA first, then run:
+
+```sh
+uv run python -m atlas_lyme_mcp.research_workflow --source-sha <verified-deployed-sha> --output <receipt-directory>
+```
+
+The SHA is an operator-supplied label, not automatically proved by process health.
+The checker uses the official real HTTPS MCP SDK on both approved hostnames, with
+a unique correlation ID per sequential tool call. It executes the documented
+Chester/Montgomery prompt, all bounded indicator and measure continuations,
+publisher scores, cumulative tick and 2022 population profiles, January climate/
+2025 forest comparison, persisted model review priority, and original source/
+methodology references. It retains every raw structured result and evidence ID.
+Original source vintage, periods, limitations, nulls and empty availability remain
+visible. No failed retrieval becomes zero disease evidence. A brief cited response
+is generated only when the bounded workflow completes; failures get an explicit
+incomplete report and nonzero exit. Each tool is called once, without automatic
+retries, and responses beyond 20 seconds fail task acceptance even if data returned.
+
+Each host is bounded to three indicator pages, three measure continuations, eight
+provenance references, two profiles and the fixed comparison/scores/model calls:
+at most 49 downstream requests. A continuation/reference beyond that bound fails
+explicitly rather than claiming completeness. The checker pauses 60 seconds after
+the first host to respect shared instance quotas across aliases. Existing callers
+can still cause capacity rejection; record it as a failed check, not an outage or
+absence. The manual GitHub workflow has a ten-minute job timeout and seven-day
+artifact retention; no cron/schedule is enabled, and it needs no Atlas credentials.
+
+Do not close #45 or other incident tickets based only on unit tests, green CI,
+health, logs or this checker's implementation. Record exact deployed SHA and
+both-host real-client receipts, inspect the cited response against the prompt,
+and preserve unresolved runtime/source prerequisites. Source admission, new
+monitoring spend, automatic alert routing and scheduled monitoring require their
+own necessary authorization. Roll back through the existing source release flow.

@@ -1,5 +1,6 @@
 """Fixed public-service boundary; no domain calculation or persistence access."""
 
+import asyncio
 import json
 import re
 import time
@@ -12,6 +13,7 @@ import httpx
 from jsonschema import ValidationError
 
 from atlas_lyme_mcp.application.public_schema import validate
+from atlas_lyme_mcp.application.telemetry import record
 
 REQUEST_ID: ContextVar[str] = ContextVar("atlas_http_request_id", default="unavailable")
 TRACEPARENT: ContextVar[str | None] = ContextVar("atlas_traceparent", default=None)
@@ -39,6 +41,7 @@ class RetrievalError(Exception):
     code: str
     retryable: bool = False
     retry_after_seconds: int | None = None
+    reason: str | None = None
 
 
 class AtlasClient:
@@ -124,6 +127,9 @@ class AtlasClient:
         headers = {"Accept": "application/json", "X-Request-ID": REQUEST_ID.get()}
         if traceparent := TRACEPARENT.get():
             headers["traceparent"] = traceparent
+        started = time.monotonic()
+        outcome, reason = "OK", "completed"
+        status: int | None = None
         try:
             async with (
                 httpx.AsyncClient(
@@ -135,6 +141,7 @@ class AtlasClient:
                 ) as client,
                 client.stream("GET", path, params=params, headers=headers) as response,
             ):
+                status = response.status_code
                 if response.status_code != 200:
                     if response.status_code == 429:
                         retry = response.headers.get("Retry-After", "60")
@@ -158,9 +165,30 @@ class AtlasClient:
                 value = json.loads(body)
                 validate(contract, value)
                 return dict(value)
-        except RetrievalError:
+        except asyncio.CancelledError:
+            outcome, reason = "CANCELLED", "cancelled"
             raise
-        except (TimeoutError, httpx.HTTPError):
-            raise RetrievalError("UPSTREAM_UNAVAILABLE", True) from None
+        except RetrievalError as error:
+            outcome, reason = error.code, error.reason or "retrieval_failed"
+            raise
+        except (TimeoutError, httpx.TimeoutException):
+            outcome, reason = "UPSTREAM_UNAVAILABLE", "upstream_timeout"
+            raise RetrievalError(outcome, True, reason=reason) from None
+        except httpx.HTTPError:
+            outcome, reason = "UPSTREAM_UNAVAILABLE", "upstream_transport"
+            raise RetrievalError(outcome, True, reason=reason) from None
         except (ValueError, TypeError, ValidationError):
-            raise RetrievalError("UPSTREAM_CONTRACT_INVALID") from None
+            outcome, reason = "UPSTREAM_CONTRACT_INVALID", "contract_invalid"
+            raise RetrievalError(outcome, reason=reason) from None
+        except Exception:
+            outcome, reason = "UNEXPECTED_ERROR", "unexpected_error"
+            raise
+        finally:
+            record(
+                "upstream_api",
+                resource,
+                outcome,
+                reason,
+                int((time.monotonic() - started) * 1000),
+                status,
+            )

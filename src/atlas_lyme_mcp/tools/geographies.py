@@ -17,7 +17,7 @@ from atlas_lyme_mcp.tools.geography_contracts import (
 
 def geography_tool(resolver: GeographyResolver) -> Tool:
     async def atlas_resolve_geographies(geographies: list[GeographyRequest]) -> CallToolResult:
-        """Resolve 1–4 US county identities by exact five-digit FIPS or county plus state
+        """Resolve 1â€“4 US county identities by exact five-digit FIPS or county plus state
         (name/postal abbreviation). Case/whitespace and County suffix normalization only;
         county equivalents require their full names. Preserve order and individual outcomes.
         Identity does not establish Atlas observations, evidence adequacy or comparability.
@@ -41,7 +41,9 @@ def geography_tool(resolver: GeographyResolver) -> Tool:
         ),
     )
     tool.fn_metadata = StrictMetadata(
-        arg_model=GeographyArguments, output_schema=GeographyResults.model_json_schema()
+        tool_name=tool.name,
+        arg_model=GeographyArguments,
+        output_schema=GeographyResults.model_json_schema(),
     )
     tool.parameters = geography_input_schema()
     return tool
