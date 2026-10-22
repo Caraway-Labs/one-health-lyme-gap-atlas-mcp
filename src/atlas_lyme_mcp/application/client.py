@@ -5,6 +5,8 @@ import json
 import re
 import time
 from collections import deque
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
@@ -54,6 +56,38 @@ class AtlasClient:
         self.active = 0
         self.waiting = 0
         self._capacity = asyncio.Semaphore(3)
+        self._session: httpx.AsyncClient | None = None
+
+    def _new_session(self) -> httpx.AsyncClient:
+        return httpx.AsyncClient(
+            base_url=self.origin,
+            transport=self.transport,
+            follow_redirects=False,
+            trust_env=False,
+            timeout=httpx.Timeout(15, connect=2),
+            limits=httpx.Limits(max_connections=3, max_keepalive_connections=3),
+        )
+
+    @asynccontextmanager
+    async def lifespan(self) -> AsyncIterator[None]:
+        """Reuse approved-origin connections only within the application's event loop."""
+        if self._session is not None:
+            raise RuntimeError("Atlas HTTP lifespan already running")
+        async with self._new_session() as session:
+            self._session = session
+            try:
+                yield
+            finally:
+                self._session = None
+
+    @asynccontextmanager
+    async def _http_client(self) -> AsyncIterator[httpx.AsyncClient]:
+        if self._session is not None:
+            yield self._session
+        else:
+            # Importable direct adapters/tests retain request-owned cleanup.
+            async with self._new_session() as session:
+                yield session
 
     async def get(
         self,
@@ -143,13 +177,7 @@ class AtlasClient:
             headers["traceparent"] = traceparent
         try:
             async with (
-                httpx.AsyncClient(
-                    base_url=self.origin,
-                    transport=self.transport,
-                    follow_redirects=False,
-                    trust_env=False,
-                    timeout=httpx.Timeout(15, connect=2),
-                ) as client,
+                self._http_client() as client,
                 client.stream("GET", path, params=params, headers=headers) as response,
             ):
                 if response.status_code != 200:

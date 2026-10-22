@@ -66,7 +66,8 @@ credentials, private endpoint or URL fetching. Fixed GET routes: indicators,
 measures, observations, source detail and methodology detail. Redirects disabled.
 The explicit production activation authorizes this non-secret public origin.
 
-Bounds: 16 KiB MCP body via SDK; 256 KiB per upstream body and structured result;
+Bounds: 16 KiB MCP body via SDK; 256 KiB per upstream body and structured result
+(the measured MCP #43 comparison-only result allowance is 512 KiB; see research-tools.md);
 at most six discovery, three profile or one provenance backend calls per tool;
 20s whole-tool deadline, 15s HTTP/read timeout and 2s connect timeout, no retries;
 three active data calls per instance; 50 downstream requests per rolling minute.
