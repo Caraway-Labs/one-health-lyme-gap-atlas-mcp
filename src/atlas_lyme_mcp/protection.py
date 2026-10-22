@@ -71,6 +71,7 @@ class PublicProtection:
                 )
                 await response(scope, receive, send)
                 return
+            assert queue is not None  # The budget rejection above includes a missing client queue.
             queue.append(now)
             self.global_requests.append(now)
             self.active += 1
