@@ -38,18 +38,20 @@ async def complete_profile(client: AtlasClient, request: ProfileArguments) -> di
 
 
 async def compare(client: AtlasClient, request: CompareArguments) -> dict[str, Any]:
-    # Flatten county/selection work so nested profiles cannot multiply fanout.
+    # Interleave counties within each selection so one county's early selections
+    # cannot delay the other county's final selection behind another full wave.
+    # Flatten work so nested profiles cannot multiply fanout.
     pages = await bounded(
         [
             complete_profile(client, ProfileArguments(county_fips=county, selections=[selection]))
-            for county in request.county_fips
             for selection in request.selections
+            for county in request.county_fips
         ]
     )
-    width = len(request.selections)
+    width = len(request.county_fips)
     profiles: list[dict[str, Any]] = []
     for i, county in enumerate(request.county_fips):
-        group = pages[i * width : (i + 1) * width]
+        group = pages[i::width]
         profiles.append(
             {
                 "county_fips": county,
