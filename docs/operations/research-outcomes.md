@@ -94,6 +94,15 @@ remain visible even when the second succeeds. These receipts are labeled
 `capacity_recovery_check` and do not certify the cited Pennsylvania workflow or
 resolve a missing public provenance resource. Service limits do not change.
 
+The locked SDK converts the middleware's plain-JSON HTTP 429 into a generic
+JSON-RPC internal error, discarding HTTP status and Retry-After. The harness
+therefore observes response headers before SDK conversion, correlated to the
+current POST and its exact request ID. It does not read or copy the rejection
+body. A missing/invalid Retry-After stays unknown and prevents a retry; the
+harness never infers a delay from the generic SDK error. Offline integration
+tests use the actual locked Client/Streamable HTTP transport with successful
+initialization and tool discovery followed by a mocked plain-JSON HTTP 429.
+
 Each host is bounded to three indicator pages, three measure continuations, eight
 provenance references, two profiles and the fixed comparison/scores/model calls:
 at most 49 downstream requests. A continuation/reference beyond that bound fails

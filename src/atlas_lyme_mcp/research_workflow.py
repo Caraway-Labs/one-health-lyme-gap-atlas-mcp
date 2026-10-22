@@ -43,6 +43,22 @@ class CapacityRejected(Exception):
     """Stop a task after recording its first busy response, without issuing follow-ons."""
 
 
+def rate_limit_metadata(response: httpx2.Response, request_id: str) -> dict[str, Any]:
+    """Retain only observed transport metadata; never inspect the response body."""
+    retry = response.headers.get("Retry-After", "")
+    return {
+        "code": "RATE_LIMITED",
+        "reason": "public_http_429",
+        "retryable": True,
+        "retry_after_seconds": (
+            int(retry) if retry.isascii() and retry.isdigit() and len(retry) <= 4 else None
+        ),
+        "request_id": request_id,
+        "http_status": 429,
+        "transport_rejection": True,
+    }
+
+
 def public_rate_limit(error: Exception, request_id: str) -> dict[str, Any] | None:
     """Recognize SDK-wrapped HTTP 429 without copying exception text or response bodies."""
     pending: list[BaseException] = [error]
@@ -51,18 +67,7 @@ def public_rate_limit(error: Exception, request_id: str) -> dict[str, Any] | Non
             break
         item = pending.pop()
         if isinstance(item, httpx2.HTTPStatusError) and item.response.status_code == 429:
-            retry = item.response.headers.get("Retry-After", "")
-            return {
-                "code": "RATE_LIMITED",
-                "reason": "public_http_429",
-                "retryable": True,
-                "retry_after_seconds": (
-                    int(retry) if retry.isascii() and retry.isdigit() and len(retry) <= 4 else None
-                ),
-                "request_id": request_id,
-                "http_status": 429,
-                "transport_rejection": True,
-            }
+            return rate_limit_metadata(item.response, request_id)
         if isinstance(item, BaseExceptionGroup):
             pending.extend(item.exceptions[:8])
     return None
@@ -73,11 +78,28 @@ class Workflow:
         self.client, self.http, self.schemas = client, http, schemas
         self.calls: list[dict[str, Any]] = []
         self.failures: list[str] = []
+        self._request_id: str | None = None
+        self._http_rejection: dict[str, Any] | None = None
+        self.http.event_hooks["response"].append(self._observe_response)
+
+    async def _observe_response(self, response: httpx2.Response) -> None:
+        # The locked SDK converts plain JSON 429 into generic MCPError and drops
+        # HTTP metadata. Observe headers first, restricted to this exact POST.
+        request = response.request
+        if (
+            self._request_id is not None
+            and request.headers.get("X-Request-ID") == self._request_id
+            and request.method == "POST"
+            and request.url.path == "/mcp"
+            and response.status_code == 429
+        ):
+            self._http_rejection = rate_limit_metadata(response, self._request_id)
 
     async def call(
         self, tool: str, arguments: dict[str, Any], *, attempt: int = 1
     ) -> dict[str, Any] | None:
         request_id = str(uuid.uuid4())
+        self._request_id, self._http_rejection = request_id, None
         self.http.headers["X-Request-ID"] = request_id
         started = time.monotonic()
         value: dict[str, Any] | None = None
@@ -101,7 +123,7 @@ class Workflow:
             cancelled = True
         except Exception as error:
             # Keep arbitrary transport/publisher text out of operational summaries.
-            rejection = public_rate_limit(error, request_id)
+            rejection = self._http_rejection or public_rate_limit(error, request_id)
             if rejection is not None:
                 value = rejection
                 code = "RATE_LIMITED"
