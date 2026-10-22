@@ -20,6 +20,7 @@ TOOLS = frozenset(
         "atlas_build_evidence_brief",
     }
 )
+INGRESS = frozenset({"mcp"})
 CODES = frozenset(
     {
         "OK",
@@ -65,11 +66,17 @@ def record(
     # Import lazily to keep the client/telemetry dependency acyclic.
     from atlas_lyme_mcp.application.client import COLLECTIONS, DETAILS, REQUEST_ID, TRACEPARENT
 
-    allowed = TOOLS if stage == "mcp_tool" else COLLECTIONS | DETAILS
+    allowed = (
+        TOOLS
+        if stage == "mcp_tool"
+        else INGRESS
+        if stage == "public_ingress"
+        else COLLECTIONS | DETAILS
+    )
     value: dict[str, Any] = {
         "event": "atlas_mcp_outcome",
         "timestamp": datetime.now(UTC).isoformat(),
-        "stage": stage if stage in {"mcp_tool", "upstream_api"} else "unknown",
+        "stage": stage if stage in {"mcp_tool", "upstream_api", "public_ingress"} else "unknown",
         "name": name if name in allowed else "unknown",
         "outcome": outcome if outcome in CODES else "UNEXPECTED_ERROR",
         "reason": reason if reason in REASONS else "retrieval_failed",

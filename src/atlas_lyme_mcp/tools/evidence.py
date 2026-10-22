@@ -317,7 +317,7 @@ class EvidenceTools:
         async def atlas_get_county_profile(
             county_fips: str, selections: list[Selection]
         ) -> CallToolResult:
-            """Retrieve published evidence for one exact five-digit county FIPS and 1â€“3 explicit
+            """Retrieve published evidence for one exact five-digit county FIPS and 1-3 explicit
             measure-period selections (year OR inclusive dates, max 31 days, OR vintage_year).
             For scapularis_status/burgdorferi_status use start_date=end_date=2025-12-31;
             for population_2022 use vintage_year=2022, not year. Preserve values,

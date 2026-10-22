@@ -10,6 +10,9 @@ The service writes fixed-field JSON `atlas_mcp_outcome` events to existing stdou
 `stage=mcp_tool` records validation failures, early capacity rejection, execution
 results and cancellations for all nine tools through the SDK metadata seam.
 `stage=upstream_api` records approved route categories, status and consumer outcome.
+`stage=public_ingress`, with the fixed name `mcp`, records HTTP 429 rejections
+before tool execution, preserving the returned request ID and existing budget or
+capacity reason. It never reads a request body or counts a rejected request as a tool call.
 No tool arguments, FIPS, cursors, source text, response bodies, client addresses,
 credentials, private URLs or arbitrary exception strings enter these events.
 Only approved fixed tool/route names, safe codes/reasons, duration, UTC time,
@@ -37,6 +40,10 @@ lines and unapproved labels, strips arbitrary fields, and separates tool/API
 counts, reasons and p50/p95 latency. Request lookup returns at most 50 safe events.
 The alert exits nonzero when a window has at least five tool calls, at least three
 failures and a failure fraction of at least 20%. This is a simple reviewed
+diagnostic threshold. Separately, three ingress rejections in the window trigger
+an ingress alert, even when no tools executed. The combined alert is true when
+either threshold is met; ingress counts and executed tool counts remain separate.
+This is an operational
 diagnostic threshold, not an inferred epidemiological or availability conclusion.
 No source change, public metrics endpoint, centralized log service, dashboard
 account, credential, scheduled polling or notification integration is created.

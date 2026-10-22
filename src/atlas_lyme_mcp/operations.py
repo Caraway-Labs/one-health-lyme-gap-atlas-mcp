@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from atlas_lyme_mcp.application.client import COLLECTIONS, DETAILS
-from atlas_lyme_mcp.application.telemetry import CODES, REASONS, TOOLS
+from atlas_lyme_mcp.application.telemetry import CODES, INGRESS, REASONS, TOOLS
 
 
 def parse_event(line: str) -> dict[str, Any] | None:
@@ -21,8 +21,17 @@ def parse_event(line: str) -> dict[str, Any] | None:
         if value.get("event") != "atlas_mcp_outcome":
             return None
         stage = value["stage"]
-        allowed = TOOLS if stage == "mcp_tool" else COLLECTIONS | DETAILS
-        if stage not in {"mcp_tool", "upstream_api"} or value["name"] not in allowed:
+        allowed = (
+            TOOLS
+            if stage == "mcp_tool"
+            else INGRESS
+            if stage == "public_ingress"
+            else COLLECTIONS | DETAILS
+        )
+        if (
+            stage not in {"mcp_tool", "upstream_api", "public_ingress"}
+            or value["name"] not in allowed
+        ):
             return None
         if value["outcome"] not in CODES or value["reason"] not in REASONS:
             return None
@@ -89,12 +98,17 @@ def summarize(
     tools = [r for r in recent if r["stage"] == "mcp_tool"]
     failures = sum(r["outcome"] != "OK" for r in tools)
     alert = len(tools) >= 5 and failures >= 3 and failures / len(tools) >= 0.2
+    rejections = [r for r in recent if r["stage"] == "public_ingress"]
+    ingress_alert = len(rejections) >= 3
     result: dict[str, Any] = {
         "window_minutes": minutes,
         "events_considered": len(recent),
         "tool_calls": len(tools),
         "tool_failures": failures,
-        "alert": alert,
+        "ingress_rejections": len(rejections),
+        "tool_alert": alert,
+        "ingress_alert": ingress_alert,
+        "alert": alert or ingress_alert,
         "groups": overview,
         "interpretation": (
             "HTTP/process health, API outcomes, tool outcomes and cited "
