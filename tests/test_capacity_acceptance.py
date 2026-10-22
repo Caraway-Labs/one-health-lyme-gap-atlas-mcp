@@ -180,3 +180,21 @@ def test_http_429_stops_workflow_without_copying_private_response_text(wrapped: 
         assert "private" not in json.dumps(result)
 
     asyncio.run(check())
+
+
+def test_noncapacity_contract_failure_retains_the_original_result_without_retry() -> None:
+    async def check() -> None:
+        value = {"fixture": "original public payload"}
+        client = SequenceClient([value])
+        async with httpx2.AsyncClient() as http:
+            workflow = Workflow(
+                cast(Client, client),
+                http,
+                {"atlas_discover_indicators": {"type": "object", "required": ["missing"]}},
+            )
+            result = await capacity_recovery(workflow)
+        assert len(client.arguments) == 1 and not result["complete"]
+        assert result["calls"][0]["outcome"] == "ValidationError"
+        assert result["calls"][0]["result"] == value
+
+    asyncio.run(check())
