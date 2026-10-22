@@ -12,6 +12,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from atlas_lyme_mcp.application.client import REQUEST_ID, TRACEPARENT
+from atlas_lyme_mcp.application.telemetry import record
 
 
 class PublicProtection:
@@ -54,13 +55,15 @@ class PublicProtection:
                         q.popleft()
             budget_limited = queue is None or len(queue) >= 30 or len(self.global_requests) >= 60
             if budget_limited or self.active >= 8:
+                reason = "request_budget" if budget_limited else "temporary_capacity"
+                record("public_ingress", "mcp", "RATE_LIMITED", reason, 0, 429)
                 response = JSONResponse(
                     {
                         "code": "RATE_LIMITED",
                         "request_id": request_id,
                         "retryable": True,
                         "retry_after_seconds": 60,
-                        "reason": "request_budget" if budget_limited else "temporary_capacity",
+                        "reason": reason,
                         "message": (
                             "Wait for Retry-After, then retry once with jitter; "
                             "avoid parallel retries."

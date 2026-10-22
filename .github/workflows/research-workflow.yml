@@ -1,0 +1,33 @@
+name: Pennsylvania MCP workflow check
+on:
+  workflow_dispatch:
+    inputs:
+      deployed_source_sha:
+        description: Exact source SHA independently verified in the active MCP deployment
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: pennsylvania-mcp-workflow
+  cancel-in-progress: false
+jobs:
+  research-task:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.10.9"
+      - run: uv sync --locked
+      - name: Check both approved MCP hosts
+        env:
+          VERIFIED_SOURCE_SHA: ${{ inputs.deployed_source_sha }}
+        run: uv run python -m atlas_lyme_mcp.research_workflow --source-sha "$VERIFIED_SOURCE_SHA" --output workflow-receipts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pennsylvania-mcp-workflow
+          path: workflow-receipts
+          retention-days: 7
