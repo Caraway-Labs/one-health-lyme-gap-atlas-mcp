@@ -70,6 +70,10 @@ Bounds: 16 KiB MCP body via SDK; 256 KiB per upstream body and structured result
 at most six discovery, three profile or one provenance backend calls per tool;
 20s whole-tool deadline, 15s HTTP/read timeout and 2s connect timeout, no retries;
 three active data calls per instance; 50 downstream requests per rolling minute.
+MCP #44 permits at most three additional downstream operations to wait at most one
+second for an existing slot, within the unchanged whole-tool deadline. Queue-full,
+wait-timeout and tool-capacity rejection return retryable RATE_LIMITED with
+reason=temporary_capacity and retry_after_seconds. No server-side retries occur.
 Anonymous HTTP protection: 30 requests/minute per connecting address, 60 global,
 eight active HTTP requests and at most 1024 salted in-memory client keys. Forwarded
 addresses are not trusted. No address, argument body or upstream text is logged.
@@ -83,6 +87,17 @@ RESULT_TOO_LARGE. SDK handles invalid schemas/unknown tools/protocol errors.
 HTML 504 and backend 503 become sanitized unavailable errors, never observations.
 No raw backend errors or private proof are returned. API #88 gateway remediation
 remains API-owned and does not block supported human-evidence retrieval.
+
+Busy-period guidance: prefer sequential semantic tool calls. For a retryable
+capacity rejection, wait at least retry_after_seconds (or HTTP Retry-After), add
+jitter, and retry the unchanged request once. If still busy, stop and report the
+request_id. Never launch parallel retries or retry INVALID_REQUEST,
+UPSTREAM_CONTRACT_INVALID, RELEASE_CHANGED or other non-retryable failures.
+request_budget identifies the retained rolling/ingress request protection;
+publisher_rate_limit identifies an upstream 429, preserving numeric Retry-After
+(bounded to 1–3600 seconds, default 60). These are transport states, not missing
+scientific observations. Existing 30/60 ingress, eight active HTTP, three active
+tools/data calls and 50 downstream requests/minute ceilings remain enforced.
 
 ## Verification and schema ownership
 

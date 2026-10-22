@@ -1,5 +1,6 @@
 """Fixed public-service boundary; no domain calculation or persistence access."""
 
+import asyncio
 import json
 import re
 import time
@@ -39,6 +40,7 @@ class RetrievalError(Exception):
     code: str
     retryable: bool = False
     retry_after_seconds: int | None = None
+    reason: str | None = None
 
 
 class AtlasClient:
@@ -50,6 +52,8 @@ class AtlasClient:
         self.transport = transport
         self.calls: deque[float] = deque()
         self.active = 0
+        self.waiting = 0
+        self._capacity = asyncio.Semaphore(3)
 
     async def get(
         self,
@@ -59,13 +63,26 @@ class AtlasClient:
         reference: str | None = None,
     ) -> dict[str, Any]:
         # Shared across every tool: concurrency never multiplies downstream requests.
-        if self.active >= 3:
-            raise RetrievalError("RATE_LIMITED", True, 1)
+        queued = self._capacity.locked()
+        if queued and self.waiting >= 3:
+            raise RetrievalError("RATE_LIMITED", True, 1, "temporary_capacity")
+        if queued:
+            self.waiting += 1
+        try:
+            # Scheduling consumes the existing whole-tool deadline, never extends it.
+            async with asyncio.timeout(1):
+                await self._capacity.acquire()
+        except TimeoutError:
+            raise RetrievalError("RATE_LIMITED", True, 1, "temporary_capacity") from None
+        finally:
+            if queued:
+                self.waiting -= 1
         self.active += 1
         try:
             return await self._get(resource, params, contract, reference)
         finally:
             self.active -= 1
+            self._capacity.release()
 
     async def _get(
         self,
@@ -116,7 +133,7 @@ class AtlasClient:
             self.calls.popleft()
         # Aggregate downstream budget: API sees the MCP service as one caller.
         if len(self.calls) >= 50:
-            raise RetrievalError("RATE_LIMITED", True, 60)
+            raise RetrievalError("RATE_LIMITED", True, 60, "request_budget")
         self.calls.append(now)
         path = f"/v1/{resource}" + (f"/{reference}" if reference else "")
         if resource in RESEARCH_PATHS:
@@ -139,7 +156,10 @@ class AtlasClient:
                     if response.status_code == 429:
                         retry = response.headers.get("Retry-After", "60")
                         raise RetrievalError(
-                            "RATE_LIMITED", True, min(int(retry), 3600) if retry.isdigit() else 60
+                            "RATE_LIMITED",
+                            True,
+                            max(1, min(int(retry), 3600)) if retry.isdigit() else 60,
+                            "publisher_rate_limit",
                         )
                     # Never include a backend body, HTML or private exception in errors.
                     code = "UPSTREAM_UNAVAILABLE"
