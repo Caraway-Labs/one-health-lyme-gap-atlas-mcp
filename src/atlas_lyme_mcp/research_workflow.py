@@ -3,9 +3,11 @@
 import argparse
 import asyncio
 import json
+import random
 import re
 import time
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -37,18 +39,50 @@ COMPARISON_SELECTIONS: list[dict[str, Any]] = [
 ] + [{"measure_id": "nlcd_forest_area_share_county_year", "year": 2025}]
 
 
+class CapacityRejected(Exception):
+    """Stop a task after recording its first busy response, without issuing follow-ons."""
+
+
+def public_rate_limit(error: Exception, request_id: str) -> dict[str, Any] | None:
+    """Recognize SDK-wrapped HTTP 429 without copying exception text or response bodies."""
+    pending: list[BaseException] = [error]
+    for _ in range(16):
+        if not pending:
+            break
+        item = pending.pop()
+        if isinstance(item, httpx2.HTTPStatusError) and item.response.status_code == 429:
+            retry = item.response.headers.get("Retry-After", "")
+            return {
+                "code": "RATE_LIMITED",
+                "reason": "public_http_429",
+                "retryable": True,
+                "retry_after_seconds": (
+                    int(retry) if retry.isascii() and retry.isdigit() and len(retry) <= 4 else None
+                ),
+                "request_id": request_id,
+                "http_status": 429,
+                "transport_rejection": True,
+            }
+        if isinstance(item, BaseExceptionGroup):
+            pending.extend(item.exceptions[:8])
+    return None
+
+
 class Workflow:
     def __init__(self, client: Client, http: httpx2.AsyncClient, schemas: dict[str, Any]) -> None:
         self.client, self.http, self.schemas = client, http, schemas
         self.calls: list[dict[str, Any]] = []
         self.failures: list[str] = []
 
-    async def call(self, tool: str, arguments: dict[str, Any]) -> dict[str, Any] | None:
+    async def call(
+        self, tool: str, arguments: dict[str, Any], *, attempt: int = 1
+    ) -> dict[str, Any] | None:
         request_id = str(uuid.uuid4())
         self.http.headers["X-Request-ID"] = request_id
         started = time.monotonic()
         value: dict[str, Any] | None = None
         code = "OK"
+        cancelled = False
         try:
             result = await self.client.call_tool(tool, arguments)
             value = result.structured_content
@@ -62,9 +96,17 @@ class Workflow:
                     or json.loads(result.content[0].text) != value
                 ):
                     code = "CONTENT_PARITY_INVALID"
+        except asyncio.CancelledError:
+            code = "CANCELLED"
+            cancelled = True
         except Exception as error:
             # Keep arbitrary transport/publisher text out of operational summaries.
-            code = type(error).__name__
+            rejection = public_rate_limit(error, request_id)
+            if rejection is not None:
+                value = rejection
+                code = "RATE_LIMITED"
+            else:
+                code = type(error).__name__
         elapsed = time.monotonic() - started
         if code == "OK" and elapsed > 20:
             code = "LATE_COMPLETION"
@@ -72,6 +114,7 @@ class Workflow:
         self.calls.append(
             {
                 "tool": tool,
+                "attempt": attempt,
                 "request_id": request_id,
                 "elapsed_seconds": elapsed,
                 "success": success,
@@ -81,6 +124,10 @@ class Workflow:
         )
         if not success:
             self.failures.append(f"{tool}:{code}:{request_id}")
+            if cancelled:
+                raise asyncio.CancelledError
+            if code == "RATE_LIMITED":
+                raise CapacityRejected
             return None
         return value
 
@@ -115,6 +162,23 @@ class Workflow:
                 self.failures.append("measure pagination bound reached; catalog incomplete")
 
     async def run(self) -> dict[str, Any]:
+        try:
+            return await self._run()
+        except CapacityRejected:
+            return {
+                "complete": False,
+                "stopped_reason": "capacity_rejected",
+                "failures": self.failures,
+                "calls": self.calls,
+                "profiles": [],
+                "scores": None,
+                "comparison": None,
+                "priority": None,
+                "resources": [],
+                "evidence_references": [],
+            }
+
+    async def _run(self) -> dict[str, Any]:
         await self.discovery()
         scores = await self.call("atlas_get_atlas_scores", {"county_fips": COUNTIES})
         profiles = []
@@ -302,15 +366,87 @@ def render(result: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
-async def check(url: str) -> dict[str, Any]:
-    async with httpx2.AsyncClient(timeout=30) as http:
-        transport = streamable_http_client(url, http_client=http)
-        async with Client(transport, mode="legacy") as client:
-            schemas = {tool.name: tool.output_schema for tool in (await client.list_tools()).tools}
-            return await Workflow(client, http, schemas).run()
+async def capacity_recovery(
+    workflow: Workflow,
+    wait: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    jitter: Callable[[], float] = lambda: random.uniform(0, 0.25),
+) -> dict[str, Any]:
+    """At most two unchanged one-indicator calls; never certify a scientific workflow."""
+    name, arguments = "atlas_discover_indicators", {"page_size": 1}
+    passed = False
+    rejected = False
+    retry_wait: float | None = None
+    skipped: str | None = None
+    try:
+        passed = await workflow.call(name, arguments) is not None
+    except CapacityRejected:
+        rejected = True
+        response = workflow.calls[-1]["result"] or {}
+        delay = response.get("retry_after_seconds")
+        if response.get("retryable") is not True:
+            skipped = "not_retryable"
+        elif type(delay) is not int or not 1 <= delay <= 60:
+            # Do not shorten a publisher delay to fit this bounded diagnostic.
+            skipped = "retry_after_outside_1_to_60_second_check"
+        else:
+            extra = jitter()
+            if not 0 <= extra <= 0.25:
+                raise ValueError("Diagnostic jitter must be between 0 and 0.25 seconds") from None
+            retry_wait = delay + extra
+            await wait(retry_wait)
+            try:
+                passed = await workflow.call(name, arguments, attempt=2) is not None
+            except CapacityRejected:
+                pass
+    return {
+        "kind": "capacity_recovery_check",
+        "complete": passed,
+        "recovery_exercised": len(workflow.calls) == 2,
+        "recovered": rejected and passed,
+        "retry_wait_seconds": retry_wait,
+        "retry_skipped": skipped,
+        "calls": workflow.calls,
+        "failures": workflow.failures,
+        "interpretation": (
+            "A separate bounded transport check, not complete Pennsylvania workflow acceptance. "
+            "First-attempt failures remain in the receipt; "
+            "first-attempt success does not prove recovery."
+        ),
+    }
 
 
-async def run(output: Path, source_sha: str) -> bool:
+async def check(url: str, recovery_only: bool = False) -> dict[str, Any]:
+    workflow: Workflow | None = None
+    try:
+        async with asyncio.timeout(125 if recovery_only else None):
+            async with httpx2.AsyncClient(timeout=30) as http:
+                transport = streamable_http_client(url, http_client=http)
+                async with Client(transport, mode="legacy") as client:
+                    schemas = {
+                        tool.name: tool.output_schema for tool in (await client.list_tools()).tools
+                    }
+                    workflow = Workflow(client, http, schemas)
+                    if recovery_only:
+                        return await capacity_recovery(workflow)
+                    return await workflow.run()
+    except Exception as error:
+        if not recovery_only:
+            raise
+        return {
+            "kind": "capacity_recovery_check",
+            "complete": False,
+            "recovered": False,
+            "calls": workflow.calls if workflow else [],
+            "failures": [
+                *(workflow.failures if workflow else []),
+                "RECOVERY_CHECK_TIMEOUT"
+                if isinstance(error, TimeoutError)
+                else type(error).__name__,
+            ],
+        }
+
+
+async def run(output: Path, source_sha: str, recovery_only: bool = False) -> bool:
     output.mkdir(parents=True, exist_ok=True)
     complete = True
     for i, host in enumerate(HOSTS):
@@ -318,21 +454,39 @@ async def run(output: Path, source_sha: str) -> bool:
             # Respect shared instance quotas across both aliases; no background polling.
             await asyncio.sleep(60)
         try:
-            result = await check(host)
+            result = await check(host, recovery_only)
         except Exception as error:
             result = {"complete": False, "failures": [type(error).__name__]}
+        result.setdefault(
+            "kind", "capacity_recovery_check" if recovery_only else "research_workflow"
+        )
         result.update(
             endpoint=host,
             source_sha=source_sha,
             checked_at=datetime.now(UTC).isoformat(),
-            prompt=PROMPT,
         )
+        if not recovery_only:
+            result["prompt"] = PROMPT
         (output / f"host-{i + 1}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
-        (output / f"host-{i + 1}.md").write_text(render(result), encoding="utf-8")
+        report = (
+            "Capacity recovery transport check only. No scientific workflow acceptance claimed.\n\n"
+            + json.dumps(result, indent=2)
+            if recovery_only
+            else render(result)
+        )
+        (output / f"host-{i + 1}.md").write_text(report, encoding="utf-8")
         complete = complete and result["complete"]
         print(
             json.dumps(
-                {"endpoint": host, "complete": result["complete"], "failures": result["failures"]}
+                {
+                    "endpoint": host,
+                    "kind": result["kind"],
+                    "complete": result["complete"],
+                    "recovery_exercised": result.get("recovery_exercised", False),
+                    "recovered": result.get("recovered", False),
+                    "attempt_count": len(result.get("calls", [])),
+                    "failures": result["failures"],
+                }
             ),
             flush=True,
         )
@@ -343,10 +497,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--source-sha", required=True)
+    parser.add_argument("--capacity-recovery-only", action="store_true")
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.source_sha):
         parser.error("source-sha must be an independently verified full Git commit SHA")
-    if not asyncio.run(run(args.output, args.source_sha)):
+    if not asyncio.run(run(args.output, args.source_sha, args.capacity_recovery_only)):
         raise SystemExit(1)
 
 
