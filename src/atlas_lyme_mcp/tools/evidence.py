@@ -216,7 +216,7 @@ class EvidenceTools:
             # Do not queue expensive work; the coroutine has not started.
             if hasattr(operation, "close"):
                 operation.close()
-            return self.failure(RetrievalError("RATE_LIMITED", True, 1))
+            return self.failure(RetrievalError("RATE_LIMITED", True, 1, "temporary_capacity"))
         self.active += 1
         try:
             async with asyncio.timeout(20):
@@ -268,7 +268,11 @@ class EvidenceTools:
         value: dict[str, Any] = {
             "code": error.code,
             "message": (
-                "Publisher response does not match the reviewed Atlas contract. "
+                "Atlas is temporarily busy. Wait at least retry_after_seconds, then retry "
+                "the unchanged request once with jitter; send follow-on calls sequentially. "
+                "If still busy, stop and report request_id instead of repeatedly retrying."
+                if error.code == "RATE_LIMITED"
+                else "Publisher response does not match the reviewed Atlas contract. "
                 "Report this request_id for contract review; do not retry unchanged "
                 "or interpret the failure as missing disease evidence."
                 if error.code == "UPSTREAM_CONTRACT_INVALID"
@@ -279,6 +283,8 @@ class EvidenceTools:
         }
         if error.retry_after_seconds is not None:
             value["retry_after_seconds"] = error.retry_after_seconds
+        if error.reason is not None:
+            value["reason"] = error.reason
         return CallToolResult(
             is_error=True,
             content=[TextContent(type="text", text=json.dumps(value))],

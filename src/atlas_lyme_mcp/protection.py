@@ -52,19 +52,26 @@ class PublicProtection:
                 if q is not None:
                     while q and q[0] <= now - 60:
                         q.popleft()
-            if (
-                queue is None
-                or len(queue) >= 30
-                or len(self.global_requests) >= 60
-                or self.active >= 8
-            ):
+            budget_limited = queue is None or len(queue) >= 30 or len(self.global_requests) >= 60
+            if budget_limited or self.active >= 8:
                 response = JSONResponse(
-                    {"code": "RATE_LIMITED", "request_id": request_id},
+                    {
+                        "code": "RATE_LIMITED",
+                        "request_id": request_id,
+                        "retryable": True,
+                        "retry_after_seconds": 60,
+                        "reason": "request_budget" if budget_limited else "temporary_capacity",
+                        "message": (
+                            "Wait for Retry-After, then retry once with jitter; "
+                            "avoid parallel retries."
+                        ),
+                    },
                     status_code=429,
                     headers={"Retry-After": "60", "Cache-Control": "no-store"},
                 )
                 await response(scope, receive, send)
                 return
+            assert queue is not None  # The budget rejection above includes a missing client queue.
             queue.append(now)
             self.global_requests.append(now)
             self.active += 1
