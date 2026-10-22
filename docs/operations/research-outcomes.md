@@ -70,6 +70,39 @@ is generated only when the bounded workflow completes; failures get an explicit
 incomplete report and nonzero exit. Each tool is called once, without automatic
 retries, and responses beyond 20 seconds fail task acceptance even if data returned.
 
+A RATE_LIMITED response now stops the full workflow immediately: its original
+result, request ID and attempt 1 remain in the receipt, with `stopped_reason` set
+to `capacity_rejected`. No later distinct tool is sent into the same busy interval.
+Completed prior calls remain in `calls`; no full recommendation is produced.
+
+To assess recovery separately, explicitly opt in to a bounded transport check:
+
+```sh
+uv run python -m atlas_lyme_mcp.research_workflow --capacity-recovery-only --source-sha <verified-deployed-sha> --output <separate-recovery-directory>
+```
+
+This checks one indicator page (page_size 1), at most twice per host, with the
+same arguments and a separate request ID/attempt number. A retry occurs only after
+a retryable RATE_LIMITED response with an integer Retry-After of 1-60 seconds;
+the full delay plus 0-0.25 seconds jitter is honored. Longer/invalid delays are
+reported without a retry, never shortened. A second failure ends that check.
+Each host is bounded to 125 seconds including connection setup; timed-out or
+cancelled attempts retain their recorded outcomes. The existing 60-second pause
+between aliases remains. At most four upstream requests per host are generated.
+First-attempt success explicitly does not prove recovery; first-attempt failures
+remain visible even when the second succeeds. These receipts are labeled
+`capacity_recovery_check` and do not certify the cited Pennsylvania workflow or
+resolve a missing public provenance resource. Service limits do not change.
+
+The locked SDK converts the middleware's plain-JSON HTTP 429 into a generic
+JSON-RPC internal error, discarding HTTP status and Retry-After. The harness
+therefore observes response headers before SDK conversion, correlated to the
+current POST and its exact request ID. It does not read or copy the rejection
+body. A missing/invalid Retry-After stays unknown and prevents a retry; the
+harness never infers a delay from the generic SDK error. Offline integration
+tests use the actual locked Client/Streamable HTTP transport with successful
+initialization and tool discovery followed by a mocked plain-JSON HTTP 429.
+
 Each host is bounded to three indicator pages, three measure continuations, eight
 provenance references, two profiles and the fixed comparison/scores/model calls:
 at most 49 downstream requests. A continuation/reference beyond that bound fails
