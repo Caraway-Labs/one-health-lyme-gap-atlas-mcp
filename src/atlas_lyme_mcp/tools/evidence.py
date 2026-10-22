@@ -239,9 +239,15 @@ class EvidenceTools:
 
     @staticmethod
     def failure(error: RetrievalError) -> CallToolResult:
-        value = {
+        value: dict[str, Any] = {
             "code": error.code,
-            "message": "Atlas evidence request could not be completed.",
+            "message": (
+                "Publisher response does not match the reviewed Atlas contract. "
+                "Report this request_id for contract review; do not retry unchanged "
+                "or interpret the failure as missing disease evidence."
+                if error.code == "UPSTREAM_CONTRACT_INVALID"
+                else "Atlas evidence request could not be completed."
+            ),
             "retryable": error.retryable,
             "request_id": REQUEST_ID.get(),
         }

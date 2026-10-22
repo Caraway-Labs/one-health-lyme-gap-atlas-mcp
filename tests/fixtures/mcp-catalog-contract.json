@@ -546,7 +546,7 @@
       "title": "CompareArguments",
       "type": "object"
     },
-    "outputSchema": "55031882be888dd656a8e41341b4ec5ffdee441ecedc4faa7d107262e636a3dc",
+    "outputSchema": "6461238bacc3eaa34a4276bd7816eb4e354babb508f1e47aa816a2593a83dfbc",
     "annotations": {
       "readOnlyHint": true,
       "destructiveHint": false,
@@ -577,7 +577,7 @@
       "title": "CountiesArguments",
       "type": "object"
     },
-    "outputSchema": "efa757a081113ae4682b8c0734667454440291d38c70ee225928cde7bccd84ea",
+    "outputSchema": "424b6923dbf0510b70a38bc6be7e396f3f2c02c2bfb4360ec64250fab2ec65e2",
     "annotations": {
       "readOnlyHint": true,
       "destructiveHint": false,
@@ -623,7 +623,7 @@
       "title": "ScoresArguments",
       "type": "object"
     },
-    "outputSchema": "014f60accc5e885ae49cae672d9d52401d290cc0f8f6985da2052e46983fdff8",
+    "outputSchema": "299954599a92dceab98e9af1d6523670e2f895f5dab9652cc590d4952c5d6531",
     "annotations": {
       "readOnlyHint": true,
       "destructiveHint": false,
@@ -662,7 +662,7 @@
       "title": "ReviewArguments",
       "type": "object"
     },
-    "outputSchema": "4aa8b1b709b25bbdb60a435b149b3e3fec0ceef401934987f3f95d5ce2ae0e5e",
+    "outputSchema": "55c97d5f3dfd435225cb9bf938a1a710aae2951bb31de8a414d583396a2f1a30",
     "annotations": {
       "readOnlyHint": true,
       "destructiveHint": false,
@@ -816,7 +816,7 @@
       "title": "BriefArguments",
       "type": "object"
     },
-    "outputSchema": "ddbafa7c9d1d0642ff71f8839b46577dfc5a9191f043f8c0d14f711a1da94d02",
+    "outputSchema": "1c464e12bd8a8dbaf0f8d5aa36ed1f67db00ea9c5d8cb35e72ad80263dba5aaa",
     "annotations": {
       "readOnlyHint": true,
       "destructiveHint": false,

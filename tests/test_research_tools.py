@@ -208,6 +208,54 @@ def test_scores_use_bounded_county_route_and_exact_publisher_values() -> None:
     )
 
 
+@pytest.mark.parametrize("published_version", [False, True])
+def test_scores_preserve_optional_published_scoring_methodology(published_version: bool) -> None:
+    metadata = fixture("research-metadata.json")
+    if published_version:
+        metadata["scoring_methodology_version"] = "surveillance-gap-score-v1.1"
+    counties = []
+    for fips in ["42029", "42091"]:
+        county = fixture("research-county.json")
+        county.update(fips=fips, release=copy.deepcopy(metadata))
+        if published_version:
+            county["scoring_methodology_version"] = "surveillance-gap-score-v1.1"
+        counties.append(county)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/v1/atlas/metadata":
+            return httpx.Response(200, json=metadata)
+        county = next(c for c in counties if request.url.path.endswith(c["fips"]))
+        assert request.url.params["dataset_version"] == metadata["release_id"]
+        return httpx.Response(200, json=county)
+
+    result = call("atlas_get_atlas_scores", {"county_fips": ["42029", "42091"]}, handler)
+    assert not result.is_error
+    assert result.structured_content["metadata"] == metadata
+    assert result.structured_content["counties"] == counties
+    assert result.structured_content["metadata"]["limitations"] == metadata["limitations"]
+
+
+@pytest.mark.parametrize("location", ["metadata", "county", "release"])
+@pytest.mark.parametrize(
+    "field,value",
+    [("unreviewed_field", "private"), ("scoring_methodology_version", "unreviewed-version")],
+)
+def test_scores_reject_unreviewed_contract_changes(location: str, field: str, value: str) -> None:
+    metadata = fixture("research-metadata.json")
+    county = fixture("research-county.json")
+    target = {"metadata": metadata, "county": county, "release": county["release"]}[location]
+    target[field] = value
+    result = call(
+        "atlas_get_atlas_scores",
+        {"county_fips": [county["fips"]]},
+        lambda r: httpx.Response(200, json=metadata if r.url.path.endswith("metadata") else county),
+    )
+    assert result.is_error
+    assert result.structured_content["code"] == "UPSTREAM_CONTRACT_INVALID"
+    assert result.structured_content["retryable"] is False
+    assert "private" not in str(result)
+
+
 def test_brief_retains_observation_citations_and_resolves_exact_references() -> None:
     page = fixture("public-observations.json")
     source = fixture("public-source.json")

@@ -88,6 +88,31 @@ only the five new entries are added.
 
 ## Examples and verification
 
+### Scores compatibility repair (MCP #41)
+
+The reviewed additions in `contracts/research-api-schema.json` retain
+`scoring_methodology_version` on both `AtlasMetadata` and `CountyDetail`.
+The county's nested `release` uses that same metadata component. The property
+is copied unchanged from API commit `1c3979acd0618d6f2db9477d9766237683d907ce`
+and checked against the published OpenAPI on 2026-10-22. The original bundle
+source identity is retained; `reviewed_additions` identifies this later field
+synchronization separately. Nullable schema spelling and required-field order
+changes in the newer export do not change accepted values and are not copied.
+
+Older payloads may omit this API-defaulted property; MCP never invents it.
+Present values must match the published methodology literal. All original
+release, methodology and limitations fields remain intact. Unknown properties
+and unreviewed methodology versions still fail closed, with request-ID guidance
+and no claim of missing disease evidence. No score is recalculated.
+
+The five research catalog output digests change because each contains the same
+component bundle; their only scientific schema change is these two optional
+properties. The original four catalog contracts are unchanged. Regression tests
+cover both Pennsylvania FIPS, old payloads, nested release metadata and hostile
+fields/versions. Local fixtures are transport tests, not deployed acceptance.
+Release still requires the exact reviewed deployed SHA and the Pennsylvania
+workflow through a real MCP client on both approved hostnames.
+
 ```json
 {"county_fips":["01001","01003"],"selections":[{"measure_id":"case_count_floor_2023","year":2023}]}
 ```
