@@ -22,7 +22,8 @@ selection; use the existing profile tool for explicit page-by-page exploration.
 Unknown release identity, missing governed methodology or more than six distinct
 source/method references also fails a brief explicitly. No citation is fabricated.
 
-All tools retain the shared 256 KiB upstream/result cap, 20-second whole-tool
+All tools retain the 256 KiB upstream cap; comparison results alone allow 512 KiB
+under the measured #43 revision below. Other results remain 256 KiB. The 20-second whole-tool
 deadline, HTTP timeout (15 seconds, 2-second connect), no retries, at most three
 active tool operations, and 50 downstream requests/minute. Fan-out uses batches of at most three under a shared client-wide three-request cap.
 The new bounded call budgets apply only to these five tools. The original discovery,

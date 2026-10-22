@@ -24,6 +24,9 @@ from atlas_lyme_mcp.tools.contracts import (
 )
 
 logger = logging.getLogger(__name__)
+# #43 measured the exact complete Pennsylvania comparison at 370,540 encoded bytes.
+# This reviewed result-only allowance does not expand upstream bodies or other tools.
+COMPARISON_RESULT_BYTES = 512 * 1024
 
 
 def output_schema(name: str) -> dict[str, Any]:
@@ -213,7 +216,7 @@ class EvidenceTools:
             # Do not queue expensive work; the coroutine has not started.
             if hasattr(operation, "close"):
                 operation.close()
-            return self.failure(RetrievalError("RATE_LIMITED", True, 1))
+            return self.failure(RetrievalError("RATE_LIMITED", True, 1, "temporary_capacity"))
         self.active += 1
         try:
             async with asyncio.timeout(20):
@@ -232,7 +235,10 @@ class EvidenceTools:
                 )
                 Draft202012Validator(contract).validate(value)
                 encoded = json.dumps(value, ensure_ascii=False, allow_nan=False)
-                if len(encoded.encode()) > MAX_BYTES:
+                result_limit = (
+                    COMPARISON_RESULT_BYTES if name == "atlas_compare_counties" else MAX_BYTES
+                )
+                if len(encoded.encode()) > result_limit:
                     raise RetrievalError("RESULT_TOO_LARGE")
                 return CallToolResult(
                     content=[TextContent(type="text", text=encoded)], structured_content=value
@@ -262,7 +268,11 @@ class EvidenceTools:
         value: dict[str, Any] = {
             "code": error.code,
             "message": (
-                "Publisher response does not match the reviewed Atlas contract. "
+                "Atlas is temporarily busy. Wait at least retry_after_seconds, then retry "
+                "the unchanged request once with jitter; send follow-on calls sequentially. "
+                "If still busy, stop and report request_id instead of repeatedly retrying."
+                if error.code == "RATE_LIMITED"
+                else "Publisher response does not match the reviewed Atlas contract. "
                 "Report this request_id for contract review; do not retry unchanged "
                 "or interpret the failure as missing disease evidence."
                 if error.code == "UPSTREAM_CONTRACT_INVALID"

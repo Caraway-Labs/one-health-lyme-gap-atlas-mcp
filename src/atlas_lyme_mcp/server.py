@@ -1,6 +1,8 @@
 """ASGI construction and process entry point."""
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 import uvicorn
 from mcp.server.mcpserver import MCPServer
@@ -47,12 +49,21 @@ def create_app(settings: Settings | None = None) -> Starlette:
     security = None
     if settings.allowed_hosts:
         security = TransportSecuritySettings(allowed_hosts=list(settings.allowed_hosts))
-    app = create_server(settings).streamable_http_app(
+    client = AtlasClient(settings.api_origin)
+    app = create_server(settings, client=client).streamable_http_app(
         json_response=True,
         stateless_http=True,
         transport_security=security,
         max_request_body_size=16 * 1024,
     )
+    sdk_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def lifespan(application: Starlette) -> AsyncIterator[None]:
+        async with client.lifespan(), sdk_lifespan(application):
+            yield
+
+    app.router.lifespan_context = lifespan
     app.add_middleware(PublicProtection)
     return app
 

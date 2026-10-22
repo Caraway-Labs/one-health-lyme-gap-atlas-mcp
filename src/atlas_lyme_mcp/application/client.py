@@ -5,6 +5,8 @@ import json
 import re
 import time
 from collections import deque
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import Any
@@ -53,6 +55,40 @@ class AtlasClient:
         self.transport = transport
         self.calls: deque[float] = deque()
         self.active = 0
+        self.waiting = 0
+        self._capacity = asyncio.Semaphore(3)
+        self._session: httpx.AsyncClient | None = None
+
+    def _new_session(self) -> httpx.AsyncClient:
+        return httpx.AsyncClient(
+            base_url=self.origin,
+            transport=self.transport,
+            follow_redirects=False,
+            trust_env=False,
+            timeout=httpx.Timeout(15, connect=2),
+            limits=httpx.Limits(max_connections=3, max_keepalive_connections=3),
+        )
+
+    @asynccontextmanager
+    async def lifespan(self) -> AsyncIterator[None]:
+        """Reuse approved-origin connections only within the application's event loop."""
+        if self._session is not None:
+            raise RuntimeError("Atlas HTTP lifespan already running")
+        async with self._new_session() as session:
+            self._session = session
+            try:
+                yield
+            finally:
+                self._session = None
+
+    @asynccontextmanager
+    async def _http_client(self) -> AsyncIterator[httpx.AsyncClient]:
+        if self._session is not None:
+            yield self._session
+        else:
+            # Importable direct adapters/tests retain request-owned cleanup.
+            async with self._new_session() as session:
+                yield session
 
     async def get(
         self,
@@ -62,13 +98,26 @@ class AtlasClient:
         reference: str | None = None,
     ) -> dict[str, Any]:
         # Shared across every tool: concurrency never multiplies downstream requests.
-        if self.active >= 3:
-            raise RetrievalError("RATE_LIMITED", True, 1)
+        queued = self._capacity.locked()
+        if queued and self.waiting >= 3:
+            raise RetrievalError("RATE_LIMITED", True, 1, "temporary_capacity")
+        if queued:
+            self.waiting += 1
+        try:
+            # Scheduling consumes the existing whole-tool deadline, never extends it.
+            async with asyncio.timeout(1):
+                await self._capacity.acquire()
+        except TimeoutError:
+            raise RetrievalError("RATE_LIMITED", True, 1, "temporary_capacity") from None
+        finally:
+            if queued:
+                self.waiting -= 1
         self.active += 1
         try:
             return await self._get(resource, params, contract, reference)
         finally:
             self.active -= 1
+            self._capacity.release()
 
     async def _get(
         self,
@@ -119,7 +168,7 @@ class AtlasClient:
             self.calls.popleft()
         # Aggregate downstream budget: API sees the MCP service as one caller.
         if len(self.calls) >= 50:
-            raise RetrievalError("RATE_LIMITED", True, 60)
+            raise RetrievalError("RATE_LIMITED", True, 60, "request_budget")
         self.calls.append(now)
         path = f"/v1/{resource}" + (f"/{reference}" if reference else "")
         if resource in RESEARCH_PATHS:
@@ -132,13 +181,7 @@ class AtlasClient:
         status: int | None = None
         try:
             async with (
-                httpx.AsyncClient(
-                    base_url=self.origin,
-                    transport=self.transport,
-                    follow_redirects=False,
-                    trust_env=False,
-                    timeout=httpx.Timeout(15, connect=2),
-                ) as client,
+                self._http_client() as client,
                 client.stream("GET", path, params=params, headers=headers) as response,
             ):
                 status = response.status_code
@@ -146,7 +189,10 @@ class AtlasClient:
                     if response.status_code == 429:
                         retry = response.headers.get("Retry-After", "60")
                         raise RetrievalError(
-                            "RATE_LIMITED", True, min(int(retry), 3600) if retry.isdigit() else 60
+                            "RATE_LIMITED",
+                            True,
+                            max(1, min(int(retry), 3600)) if retry.isdigit() else 60,
+                            "publisher_rate_limit",
                         )
                     # Never include a backend body, HTML or private exception in errors.
                     code = "UPSTREAM_UNAVAILABLE"
