@@ -215,7 +215,12 @@ class AtlasClient:
             outcome, reason = "CANCELLED", "cancelled"
             raise
         except RetrievalError as error:
-            outcome, reason = error.code, error.reason or "retrieval_failed"
+            outcome = error.code
+            reason = error.reason or {
+                "UPSTREAM_CONTRACT_INVALID": "contract_invalid",
+                "INVALID_REQUEST": "invalid_input",
+            }.get(error.code, "retrieval_failed")
+            error.reason = reason
             raise
         except (TimeoutError, httpx.TimeoutException):
             outcome, reason = "UPSTREAM_UNAVAILABLE", "upstream_timeout"

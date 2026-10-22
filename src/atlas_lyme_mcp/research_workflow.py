@@ -124,6 +124,11 @@ class Workflow:
                 {"county_fips": county, "selections": PROFILE_SELECTIONS},
             )
             if profile:
+                if (
+                    profile["county_fips"] != county
+                    or [s["request"] for s in profile["selections"]] != PROFILE_SELECTIONS
+                ):
+                    self.failures.append("county profile identity or selection mismatch")
                 if len(profile["selections"]) != 3 or any(
                     s["next_page_token"] is not None for s in profile["selections"]
                 ):
@@ -135,6 +140,8 @@ class Workflow:
         priority = await self.call("atlas_get_surveillance_priority", {"county_fips": COUNTIES})
         observations = [o for p in profiles for s in p["selections"] for o in s["observations"]]
         if comparison:
+            if [row["request"] for row in comparison["matrix"]] != COMPARISON_SELECTIONS:
+                self.failures.append("comparison selection mismatch")
             if (
                 comparison.get("complete") is not True
                 or len(comparison["matrix"]) != 3
@@ -182,6 +189,10 @@ class Workflow:
                     },
                 )
                 if resource:
+                    if resource["reference_id"] != identifier or resource["meta"][
+                        "release_id"
+                    ] != next(iter(releases)):
+                        self.failures.append("provenance identity or release mismatch")
                     resources.append(resource)
         return {
             "complete": not self.failures,
