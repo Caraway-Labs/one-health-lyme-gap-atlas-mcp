@@ -386,9 +386,14 @@ def test_composed_result_size_is_enforced_even_when_each_page_fits() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         page = observation(request)
         page["data"][0]["limitations"] = ["public caveat " * 11000]
-        return httpx.Response(200, json=page)
+        page["data"][0]["measure_id"] = request.url.params["measure_id"]
+        response = httpx.Response(200, json=page)
+        assert len(response.content) < 256 * 1024
+        return response
 
-    result = call("atlas_compare_counties", COMPARE, handler)
+    # Four individually bounded pages exceed the approved comparison-only 512 KiB cap.
+    args = COMPARE | {"selections": [SELECTION, {"measure_id": "other", "year": 2023}]}
+    result = call("atlas_compare_counties", args, handler)
     assert result.is_error and result.structured_content["code"] == "RESULT_TOO_LARGE"
 
 
