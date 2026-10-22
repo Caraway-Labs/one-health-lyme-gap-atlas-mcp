@@ -3,6 +3,7 @@
 from datetime import date
 from typing import Any
 
+from atlas_lyme_mcp.application.bounded import bounded
 from atlas_lyme_mcp.application.client import AtlasClient, RetrievalError
 from atlas_lyme_mcp.tools.contracts import (
     DiscoveryArguments,
@@ -35,11 +36,14 @@ async def discover(client: AtlasClient, request: DiscoveryArguments) -> dict[str
     release = same_release(indicators, "release_version")
     measures: list[dict[str, Any]] = []
     continuations: dict[str, str] = {}
+    operations = []
     for indicator in indicators:
         query: dict[str, str | int] = {"indicator_id": indicator["indicator_id"], "page_size": 20}
         if request.measure_page_token:
             query["page_token"] = request.measure_page_token
-        result = await client.get("measures", query, "CollectionEnvelope_Measure_")
+        operations.append(client.get("measures", query, "CollectionEnvelope_Measure_"))
+    pages = await bounded(operations)
+    for indicator, result in zip(indicators, pages, strict=True):
         data = result["data"]
         if len(data) > 20 or any(
             m["indicator_id"] != indicator["indicator_id"]
@@ -64,10 +68,13 @@ async def profile(
     selections: list[dict[str, Any]] = []
     release: str | None = None
     response_at: str | None = None
+    operations = []
     for selection in request.selections:
         query = selection.model_dump(exclude_none=True)
         query.update(geography_type="county", geography_id=request.county_fips, page_size=31)
-        page = await client.get("observations", query, "CollectionEnvelope_Observation_")
+        operations.append(client.get("observations", query, "CollectionEnvelope_Observation_"))
+    pages = await bounded(operations)
+    for selection, page in zip(request.selections, pages, strict=True):
         observations = page["data"]
         if len(observations) > 31:
             raise RetrievalError("UPSTREAM_CONTRACT_INVALID")

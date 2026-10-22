@@ -1,9 +1,8 @@
 """Bounded research orchestration; canonical evidence remains unchanged."""
 
-import asyncio
-from collections.abc import Awaitable
 from typing import Any, Literal, cast
 
+from atlas_lyme_mcp.application.bounded import bounded
 from atlas_lyme_mcp.application.client import REQUEST_ID, AtlasClient, RetrievalError
 from atlas_lyme_mcp.application.evidence import profile, provenance, same_release
 from atlas_lyme_mcp.tools.contracts import ProfileArguments, ProvenanceArguments
@@ -24,26 +23,6 @@ LIMITATIONS = [
 ]
 
 
-async def bounded(operations: list[Awaitable[dict[str, Any]]]) -> list[dict[str, Any]]:
-    """At most three concurrent calls; cancel and close all remaining work on failure."""
-    results: list[dict[str, Any]] = []
-    consumed = 0
-    try:
-        for start in range(0, len(operations), 3):
-            batch = operations[start : start + 3]
-            consumed += len(batch)
-            values = await asyncio.gather(*batch, return_exceptions=True)
-            for value in values:
-                if isinstance(value, BaseException):
-                    raise value
-                results.append(value)
-        return results
-    finally:
-        for operation in operations[consumed:]:
-            if hasattr(operation, "close"):
-                operation.close()
-
-
 async def complete_profile(client: AtlasClient, request: ProfileArguments) -> dict[str, Any]:
     result = await profile(client, request, include_selection_meta=True)
     if any(s["next_page_token"] is not None for s in result["selections"]):
@@ -59,14 +38,28 @@ async def complete_profile(client: AtlasClient, request: ProfileArguments) -> di
 
 
 async def compare(client: AtlasClient, request: CompareArguments) -> dict[str, Any]:
-    profiles = await bounded(
+    # Flatten county/selection work so nested profiles cannot multiply fanout.
+    pages = await bounded(
         [
-            complete_profile(
-                client, ProfileArguments(county_fips=county, selections=request.selections)
-            )
+            complete_profile(client, ProfileArguments(county_fips=county, selections=[selection]))
             for county in request.county_fips
+            for selection in request.selections
         ]
     )
+    width = len(request.selections)
+    profiles: list[dict[str, Any]] = []
+    for i, county in enumerate(request.county_fips):
+        group = pages[i * width : (i + 1) * width]
+        profiles.append(
+            {
+                "county_fips": county,
+                "selections": [p["selections"][0] for p in group],
+                "meta": {
+                    "release_id": same_release([p["meta"] for p in group], "release_id"),
+                    "response_at": group[-1]["meta"]["response_at"],
+                },
+            }
+        )
     release = same_release([p["meta"] for p in profiles], "release_id")
     matrix = []
     for i, selection in enumerate(request.selections):
