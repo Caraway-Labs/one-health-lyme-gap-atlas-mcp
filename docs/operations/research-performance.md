@@ -59,3 +59,17 @@ The pre-change live discovery first/warm/concurrent timings were 20.36s (failed)
 Concurrent capacity/retry behavior remains tracked separately by #44. Publish
 post-change first/warm/concurrent receipts from both deployed hosts before closing
 #43; health, mock scheduling tests and direct API size reads do not establish this.
+
+## Comparison scheduling follow-up
+
+Comparison retrievals interleave counties within each selection, still with three
+workers. Results are reconstructed in the original selection and county order.
+This avoids scheduling the second county's final selection behind all of its
+earlier selections when one earlier county operation remains slow. No evidence,
+limits, retries, or deadlines change. A barrier regression verifies that both
+counties can enter the first selection in the first wave without changing output.
+
+The latency harness records payload completeness separately from the 20-second
+budget; a late complete payload fails `success`. First/warm differences may reflect
+upstream caching or deployments. Record API and MCP deployment identity, capacity,
+and measurement timestamps before attributing a latency change to this scheduler.

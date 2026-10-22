@@ -46,11 +46,14 @@ async def benchmark(url: str) -> list[dict[str, Any]]:
                             and all(c["next_page_token"] is None for c in row["counties"])
                             for row in value["matrix"]
                         )
+                    elapsed = time.monotonic() - started
                     return {
                         "phase": phase,
                         "tool": name,
-                        "elapsed_seconds": time.monotonic() - started,
-                        "success": complete,
+                        "elapsed_seconds": elapsed,
+                        "payload_complete": complete,
+                        "within_tool_budget": elapsed <= 20,
+                        "success": complete and elapsed <= 20,
                         "is_error": result.is_error,
                         "result": value,
                     }
