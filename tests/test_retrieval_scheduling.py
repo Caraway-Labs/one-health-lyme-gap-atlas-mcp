@@ -152,3 +152,47 @@ def test_connection_session_reused_and_closed_on_failure() -> None:
         assert client._session is None and client.active == 0
 
     asyncio.run(check())
+
+
+@pytest.mark.parametrize("selection_count,success", [(1, True), (2, False)])
+def test_comparison_result_allowance_is_bounded_without_truncation(
+    selection_count: int, success: bool
+) -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        page = fixture("observations")
+        base = page["data"][0]
+        page["data"] = []
+        for i in range(31):
+            row = copy.deepcopy(base)
+            row["observation_id"] = f"synthetic-{i}"
+            row["evidence"]["resource_id"] = row["observation_id"]
+            row["measure_id"] = request.url.params["measure_id"]
+            row["geography"]["geography_id"] = request.url.params["geography_id"]
+            row["limitations"] = ["Synthetic budget fixture: " + "x" * 3500]
+            page["data"].append(row)
+        return httpx.Response(200, json=page)
+
+    server = create_server(
+        client=AtlasClient("https://api.onehealthatlas.org", httpx.MockTransport(handler))
+    )
+    result = asyncio.run(
+        server.call_tool(
+            "atlas_compare_counties",
+            {
+                "county_fips": ["01001", "01003"],
+                "selections": [
+                    {"measure_id": f"measure{i}", "year": 2023} for i in range(selection_count)
+                ],
+            },
+        )
+    )
+    assert isinstance(result, CallToolResult)
+    assert result.is_error is not success
+    if success:
+        assert len(str(result.structured_content).encode()) > 256 * 1024
+        assert all(
+            len(c["observations"]) == 31 for c in result.structured_content["matrix"][0]["counties"]
+        )
+    else:
+        assert result.structured_content["code"] == "RESULT_TOO_LARGE"
+        assert "matrix" not in result.structured_content
