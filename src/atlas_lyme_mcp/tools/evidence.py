@@ -24,6 +24,9 @@ from atlas_lyme_mcp.tools.contracts import (
 )
 
 logger = logging.getLogger(__name__)
+# #43 measured the exact complete Pennsylvania comparison at 370,540 encoded bytes.
+# This reviewed result-only allowance does not expand upstream bodies or other tools.
+COMPARISON_RESULT_BYTES = 512 * 1024
 
 
 def output_schema(name: str) -> dict[str, Any]:
@@ -232,7 +235,10 @@ class EvidenceTools:
                 )
                 Draft202012Validator(contract).validate(value)
                 encoded = json.dumps(value, ensure_ascii=False, allow_nan=False)
-                if len(encoded.encode()) > MAX_BYTES:
+                result_limit = (
+                    COMPARISON_RESULT_BYTES if name == "atlas_compare_counties" else MAX_BYTES
+                )
+                if len(encoded.encode()) > result_limit:
                     raise RetrievalError("RESULT_TOO_LARGE")
                 return CallToolResult(
                     content=[TextContent(type="text", text=encoded)], structured_content=value
