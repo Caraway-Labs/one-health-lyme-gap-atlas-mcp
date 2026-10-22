@@ -12,6 +12,7 @@ description = "Agent-facing MCP interface for the One Health Lyme Gap Atlas"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "httpx>=0.28,<1",
+    "httpx2>=2.13,<3",
     "jsonschema>=4.26,<5",
     "mcp>=2.2,<3",
     "one-health-lyme-gap-atlas-shared @ git+https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-shared-python.git@83ccbe76047185f6aacaff551afd8b03d88aa5cf",

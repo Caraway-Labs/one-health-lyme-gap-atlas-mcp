@@ -248,10 +248,10 @@ class EvidenceTools:
             return self.failure(error)
         except TimeoutError:
             code = "UPSTREAM_UNAVAILABLE"
-            return self.failure(RetrievalError(code, True))
+            return self.failure(RetrievalError(code, True, reason="tool_deadline"))
         except (ValidationError, ValueError, TypeError, KeyError):
             code = "UPSTREAM_CONTRACT_INVALID"
-            return self.failure(RetrievalError(code))
+            return self.failure(RetrievalError(code, reason="contract_invalid"))
         finally:
             self.active -= 1
             # No request arguments, upstream bodies, IPs or source text in telemetry.
@@ -317,7 +317,7 @@ class EvidenceTools:
         async def atlas_get_county_profile(
             county_fips: str, selections: list[Selection]
         ) -> CallToolResult:
-            """Retrieve published evidence for one exact five-digit county FIPS and 1–3 explicit
+            """Retrieve published evidence for one exact five-digit county FIPS and 1-3 explicit
             measure-period selections (year OR inclusive dates, max 31 days, OR vintage_year).
             For scapularis_status/burgdorferi_status use start_date=end_date=2025-12-31;
             for population_2022 use vintage_year=2022, not year. Preserve values,
@@ -365,7 +365,7 @@ class EvidenceTools:
             )
             # SDK-supported Tool metadata: strict flat args, not permissive inferred kwargs.
             tool.fn_metadata = StrictMetadata(
-                arg_model=arguments, output_schema=output_schema(tool.name)
+                tool_name=tool.name, arg_model=arguments, output_schema=output_schema(tool.name)
             )
             tool.parameters = arguments.model_json_schema()
             tools.append(tool)
