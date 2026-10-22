@@ -197,8 +197,9 @@ Preserve county_context vintage, source field, definition, category label, allow
 states and metadata methodology alongside all original source/evidence/version
 references and limitations. Response fidelity verifies the requested county,
 measure and vintage, release, evidence identity and valid original period shape.
-Null category dates are not fabricated. The profile input/output and three
-research input/output catalog snapshots intentionally change; scientific dated
+Null category dates are not fabricated. Profile, comparison and brief input
+snapshots change. Profile and all five research output digests change because
+research outputs embed the common component bundle. Scientific dated
 schemas, geography input, inventory, annotations and service budgets do not.
 
 Regression fixtures prove transport behavior, not published availability.
