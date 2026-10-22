@@ -15,9 +15,24 @@ DOCUMENT = json.loads(
 RESEARCH_DOCUMENT = json.loads(
     (Path(__file__).parents[1] / "contracts" / "research-api-schema.json").read_text()
 )
+CONTEXT_DOCUMENT = json.loads(
+    (Path(__file__).parents[1] / "contracts" / "context-api-schema.json").read_text()
+)
+
+
+def context_components() -> dict[str, Any]:
+    """Namespace canonical context components without altering dated contracts."""
+    encoded = json.dumps(CONTEXT_DOCUMENT["components"]["schemas"])
+    encoded = encoded.replace("#/components/schemas/", "#/components/schemas/Context_")
+    return {"Context_" + name: value for name, value in json.loads(encoded).items()}
 
 
 def schema(name: str) -> dict[str, Any]:
+    if name.startswith("context:"):
+        return {
+            "$ref": f"#/components/schemas/{name.split(':')[1]}",
+            "components": CONTEXT_DOCUMENT["components"],
+        }
     if name.startswith("research:"):
         return {
             "$ref": f"#/components/schemas/{name.split(':')[1]}",

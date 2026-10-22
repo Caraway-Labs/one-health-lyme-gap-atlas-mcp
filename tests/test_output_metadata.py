@@ -1,5 +1,6 @@
 """MCP output prose, validation equivalence and canonical ownership regressions."""
 
+import copy
 import hashlib
 import json
 from pathlib import Path
@@ -37,7 +38,19 @@ def test_raw_output_constraints_and_scientific_bundle_unchanged() -> None:
         if tool["name"] not in REVIEW["tools"]:
             continue  # #25 applies to the four pre-existing tool contracts only.
         receipt = REVIEW["tools"][tool["name"]]
-        assert digest(constraints(tool.get("outputSchema"))) == receipt["before_constraints_sha256"]
+        output = copy.deepcopy(tool.get("outputSchema"))
+        assert isinstance(output, dict)
+        if tool["name"] == "atlas_get_county_profile":
+            # #42 explicitly adds a context alternative and original selection metadata.
+            # Reverse only those reviewed additions to keep guarding every old constraint.
+            schemas = output["components"]["schemas"]
+            for name in list(schemas):
+                if name.startswith("Context_"):
+                    del schemas[name]
+            fields = output["properties"]["selections"]["items"]["properties"]
+            fields.pop("availability")
+            fields["observations"]["items"] = {"$ref": "#/components/schemas/Observation"}
+        assert digest(constraints(output)) == receipt["before_constraints_sha256"]
     # Git checks out CRLF on Windows; compare canonical repository LF bytes.
     bundle = Path("src/atlas_lyme_mcp/contracts/public-api-schema.json").read_bytes()
     bundle = bundle.replace(b"\r\n", b"\n")
