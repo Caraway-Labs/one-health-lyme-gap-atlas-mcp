@@ -685,6 +685,12 @@
           },
           "release": {
             "$ref": "#/components/schemas/AtlasMetadata"
+          },
+          "scoring_methodology_version": {
+            "type": "string",
+            "const": "surveillance-gap-score-v1.1",
+            "title": "Scoring Methodology Version",
+            "default": "surveillance-gap-score-v1.1"
           }
         },
         "type": "object",
@@ -843,6 +849,12 @@
             },
             "type": "array",
             "title": "States"
+          },
+          "scoring_methodology_version": {
+            "type": "string",
+            "const": "surveillance-gap-score-v1.1",
+            "title": "Scoring Methodology Version",
+            "default": "surveillance-gap-score-v1.1"
           }
         },
         "type": "object",
@@ -2074,5 +2086,16 @@
         "title": "CollectionLinks"
       }
     }
-  }
+  },
+  "reviewed_additions": [
+    {
+      "issue": 41,
+      "source_commit": "1c3979acd0618d6f2db9477d9766237683d907ce",
+      "source_file_sha256": "dfa540f57f0c359f5adc0a0d8b851d964008fbea72c84f9d5f09bcdf1152fbf0",
+      "properties": [
+        "AtlasMetadata.scoring_methodology_version",
+        "CountyDetail.scoring_methodology_version"
+      ]
+    }
+  ]
 }
