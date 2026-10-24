@@ -10,7 +10,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from atlas_lyme_mcp.application.client import COLLECTIONS, DETAILS
-from atlas_lyme_mcp.application.telemetry import CODES, INGRESS, REASONS, TOOLS
+from atlas_lyme_mcp.application.telemetry import CODES, INGRESS, INGRESS_CAUSES, REASONS, TOOLS
 
 
 def parse_event(line: str) -> dict[str, Any] | None:
@@ -60,6 +60,12 @@ def parse_event(line: str) -> dict[str, Any] | None:
         status = value.get("http_status")
         if type(status) is int and 100 <= status <= 599:
             safe["http_status"] = status
+        cause = value.get("ingress_cause")
+        if cause in INGRESS_CAUSES:
+            safe["ingress_cause"] = cause
+        deadline = value.get("deadline_ms")
+        if type(deadline) is int and 0 < deadline <= 120_000:
+            safe["deadline_ms"] = deadline
         return safe
     except (ValueError, KeyError, TypeError, AttributeError):
         return None
@@ -100,12 +106,20 @@ def summarize(
     alert = len(tools) >= 5 and failures >= 3 and failures / len(tools) >= 0.2
     rejections = [r for r in recent if r["stage"] == "public_ingress"]
     ingress_alert = len(rejections) >= 3
+    near_deadline = sum(
+        1
+        for r in tools
+        if r.get("deadline_ms") and r["duration_ms"] >= int(0.9 * int(r["deadline_ms"]))
+    )
+    ingress_causes = dict(Counter(r.get("ingress_cause", "unknown") for r in rejections))
     result: dict[str, Any] = {
         "window_minutes": minutes,
         "events_considered": len(recent),
         "tool_calls": len(tools),
         "tool_failures": failures,
         "ingress_rejections": len(rejections),
+        "ingress_causes": ingress_causes,
+        "near_deadline_tool_calls": near_deadline,
         "tool_alert": alert,
         "ingress_alert": ingress_alert,
         "alert": alert or ingress_alert,

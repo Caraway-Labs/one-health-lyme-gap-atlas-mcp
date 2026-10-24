@@ -37,6 +37,9 @@ CODES = frozenset(
         "LATE_COMPLETION",
     }
 )
+INGRESS_CAUSES = frozenset(
+    {"per_client_rate", "global_rate", "active_mcp_requests", "client_table_full"}
+)
 REASONS = frozenset(
     {
         "completed",
@@ -62,6 +65,8 @@ def record(
     reason: str,
     duration_ms: int,
     http_status: int | None = None,
+    ingress_cause: str | None = None,
+    deadline_ms: int | None = None,
 ) -> None:
     # Import lazily to keep the client/telemetry dependency acyclic.
     from atlas_lyme_mcp.application.client import COLLECTIONS, DETAILS, REQUEST_ID, TRACEPARENT
@@ -90,4 +95,8 @@ def record(
         value["trace_id"] = trace.split("-")[1]
     if http_status is not None and 100 <= http_status <= 599:
         value["http_status"] = http_status
+    if ingress_cause in INGRESS_CAUSES:
+        value["ingress_cause"] = ingress_cause
+    if deadline_ms is not None and 0 < deadline_ms <= 120_000:
+        value["deadline_ms"] = deadline_ms
     logger.info(json.dumps(value, separators=(",", ":")))

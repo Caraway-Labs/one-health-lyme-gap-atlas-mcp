@@ -11,7 +11,7 @@ from mcp.server.mcpserver.utilities.func_metadata import ArgModelBase, FuncMetad
 from mcp_types import CallToolResult
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
-from atlas_lyme_mcp.application.mcp_tracing import tool_span
+from atlas_lyme_mcp.application.mcp_tracing import TOOL_DEADLINE_MS, tool_span
 from atlas_lyme_mcp.application.telemetry import record
 
 Identifier = Annotated[
@@ -113,6 +113,7 @@ class StrictMetadata(FuncMetadata):
                     outcome,
                     reason,
                     duration_ms,
+                    deadline_ms=TOOL_DEADLINE_MS,
                 )
 
     def pre_parse_json(self, data: dict[str, Any]) -> dict[str, Any]:
