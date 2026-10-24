@@ -5,8 +5,18 @@ domains:
     type: ALIAS
 alerts:
   - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
 services:
   - name: mcp
+    alerts:
+      - rule: CPU_UTILIZATION
+        operator: GREATER_THAN
+        value: 80
+        window: FIVE_MINUTES
+      - rule: MEM_UTILIZATION
+        operator: GREATER_THAN
+        value: 80
+        window: FIVE_MINUTES
     github:
       repo: Caraway-Labs/one-health-lyme-gap-atlas-mcp
       branch: main
