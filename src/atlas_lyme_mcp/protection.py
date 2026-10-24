@@ -72,7 +72,15 @@ class PublicProtection:
                     else "temporary_capacity"
                 )
                 with ingress_rejection_span(ingress_cause):
-                    record("public_ingress", "mcp", "RATE_LIMITED", reason, 0, 429)
+                    record(
+                        "public_ingress",
+                        "mcp",
+                        "RATE_LIMITED",
+                        reason,
+                        0,
+                        429,
+                        ingress_cause=ingress_cause,
+                    )
                 response = JSONResponse(
                     {
                         "code": "RATE_LIMITED",
