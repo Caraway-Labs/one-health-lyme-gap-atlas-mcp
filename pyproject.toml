@@ -15,7 +15,7 @@ dependencies = [
     "httpx2>=2.13,<3",
     "jsonschema>=4.26,<5",
     "mcp>=2.2,<3",
-    "one-health-lyme-gap-atlas-shared @ git+https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-shared-python.git@83ccbe76047185f6aacaff551afd8b03d88aa5cf",
+    "one-health-lyme-gap-atlas-shared[observability] @ git+https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-shared-python.git@1663267c6a3121d7cbb1d40b95a6dc50ee5e1642",
     "uvicorn>=0.35,<1",
 ]
 

@@ -12,7 +12,7 @@ from lyme_gap_atlas_shared.domain import normalize_county_fips
 from packaging.requirements import Requirement
 
 ROOT = Path(__file__).resolve().parents[1]
-SHARED_SHA = "83ccbe76047185f6aacaff551afd8b03d88aa5cf"
+SHARED_SHA = "1663267c6a3121d7cbb1d40b95a6dc50ee5e1642"
 FORBIDDEN = (
     "lyme_gap_atlas_shared.infrastructure",
     "lyme_gap_atlas_shared.snowflake",
@@ -58,7 +58,7 @@ def test_shared_base_is_immutable_and_has_no_persistence_dependencies() -> None:
         if Requirement(item).name == "one-health-lyme-gap-atlas-shared"
     ]
     assert len(dependency) == 1
-    assert not dependency[0].extras
+    assert dependency[0].extras == {"observability"}
     assert dependency[0].url == (
         "git+https://github.com/Caraway-Labs/one-health-lyme-gap-atlas-shared-python.git@"
         + SHARED_SHA
@@ -66,12 +66,12 @@ def test_shared_base_is_immutable_and_has_no_persistence_dependencies() -> None:
 
     lock = tomllib.loads((ROOT / "uv.lock").read_text(encoding="utf-8"))
     shared = next(p for p in lock["package"] if p["name"] == dependency[0].name)
-    assert shared["version"] == "1.0.0"
+    assert shared["version"] == "2.0.0"
     assert shared["source"]["git"].endswith("#" + SHARED_SHA)
     assert {item["name"] for item in shared["dependencies"]} == {"pydantic"}
 
     installed = importlib.metadata.distribution(dependency[0].name)
-    assert installed.version == "1.0.0"
+    assert installed.version == "2.0.0"
     direct_url = installed.read_text("direct_url.json")
     assert direct_url is not None
     assert json.loads(direct_url)["vcs_info"]["commit_id"] == SHARED_SHA

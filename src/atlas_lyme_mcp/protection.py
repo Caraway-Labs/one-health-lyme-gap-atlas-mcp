@@ -12,6 +12,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from atlas_lyme_mcp.application.client import REQUEST_ID, TRACEPARENT
+from atlas_lyme_mcp.application.mcp_tracing import ingress_rejection_span
 from atlas_lyme_mcp.application.telemetry import record
 
 
@@ -53,10 +54,24 @@ class PublicProtection:
                 if q is not None:
                     while q and q[0] <= now - 60:
                         q.popleft()
-            budget_limited = queue is None or len(queue) >= 30 or len(self.global_requests) >= 60
-            if budget_limited or self.active >= 8:
-                reason = "request_budget" if budget_limited else "temporary_capacity"
-                record("public_ingress", "mcp", "RATE_LIMITED", reason, 0, 429)
+            if self.active >= 8:
+                ingress_cause = "active_mcp_requests"
+            elif queue is None:
+                ingress_cause = "client_table_full"
+            elif len(queue) >= 30:
+                ingress_cause = "per_client_rate"
+            elif len(self.global_requests) >= 60:
+                ingress_cause = "global_rate"
+            else:
+                ingress_cause = None
+            if ingress_cause is not None:
+                reason = (
+                    "request_budget"
+                    if ingress_cause != "active_mcp_requests"
+                    else "temporary_capacity"
+                )
+                with ingress_rejection_span(ingress_cause):
+                    record("public_ingress", "mcp", "RATE_LIMITED", reason, 0, 429)
                 response = JSONResponse(
                     {
                         "code": "RATE_LIMITED",

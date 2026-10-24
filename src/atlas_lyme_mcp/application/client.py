@@ -14,6 +14,7 @@ from typing import Any
 import httpx
 from jsonschema import ValidationError
 
+from atlas_lyme_mcp.application.mcp_tracing import inject_upstream_trace, upstream_span
 from atlas_lyme_mcp.application.public_schema import validate
 from atlas_lyme_mcp.application.telemetry import record
 
@@ -176,41 +177,46 @@ class AtlasClient:
         headers = {"Accept": "application/json", "X-Request-ID": REQUEST_ID.get()}
         if traceparent := TRACEPARENT.get():
             headers["traceparent"] = traceparent
+        inject_upstream_trace(headers)
         started = time.monotonic()
         outcome, reason = "OK", "completed"
         status: int | None = None
+        span_state: dict[str, str | int | None] | None = None
         try:
-            async with (
-                self._http_client() as client,
-                client.stream("GET", path, params=params, headers=headers) as response,
-            ):
-                status = response.status_code
-                if response.status_code != 200:
-                    if response.status_code == 429:
-                        retry = response.headers.get("Retry-After", "60")
-                        raise RetrievalError(
-                            "RATE_LIMITED",
-                            True,
-                            max(1, min(int(retry), 3600)) if retry.isdigit() else 60,
-                            "publisher_rate_limit",
-                        )
-                    # Never include a backend body, HTML or private exception in errors.
-                    code = "UPSTREAM_UNAVAILABLE"
-                    if response.status_code == 404:
-                        code = "RESOURCE_NOT_FOUND"
-                    elif response.status_code == 400:
-                        code = "INVALID_REQUEST"
-                    raise RetrievalError(code, response.status_code >= 500)
-                if response.headers.get("content-type", "").split(";")[0] != "application/json":
-                    raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
-                body = bytearray()
-                async for chunk in response.aiter_bytes():
-                    if len(body) + len(chunk) > MAX_BYTES:
-                        raise RetrievalError("RESULT_TOO_LARGE")
-                    body.extend(chunk)
-                value = json.loads(body)
-                validate(contract, value)
-                return dict(value)
+            with upstream_span(resource) as active_span:
+                span_state = active_span
+                async with (
+                    self._http_client() as client,
+                    client.stream("GET", path, params=params, headers=headers) as response,
+                ):
+                    status = response.status_code
+                    span_state["http_status"] = status
+                    if response.status_code != 200:
+                        if response.status_code == 429:
+                            retry = response.headers.get("Retry-After", "60")
+                            raise RetrievalError(
+                                "RATE_LIMITED",
+                                True,
+                                max(1, min(int(retry), 3600)) if retry.isdigit() else 60,
+                                "publisher_rate_limit",
+                            )
+                        # Never include a backend body, HTML or private exception in errors.
+                        code = "UPSTREAM_UNAVAILABLE"
+                        if response.status_code == 404:
+                            code = "RESOURCE_NOT_FOUND"
+                        elif response.status_code == 400:
+                            code = "INVALID_REQUEST"
+                        raise RetrievalError(code, response.status_code >= 500)
+                    if response.headers.get("content-type", "").split(";")[0] != "application/json":
+                        raise RetrievalError("UPSTREAM_CONTRACT_INVALID")
+                    body = bytearray()
+                    async for chunk in response.aiter_bytes():
+                        if len(body) + len(chunk) > MAX_BYTES:
+                            raise RetrievalError("RESULT_TOO_LARGE")
+                        body.extend(chunk)
+                    value = json.loads(body)
+                    validate(contract, value)
+                    return dict(value)
         except asyncio.CancelledError:
             outcome, reason = "CANCELLED", "cancelled"
             raise
@@ -235,6 +241,9 @@ class AtlasClient:
             outcome, reason = "UNEXPECTED_ERROR", "unexpected_error"
             raise
         finally:
+            if span_state is not None:
+                span_state["outcome"] = outcome
+                span_state["reason"] = reason
             record(
                 "upstream_api",
                 resource,
