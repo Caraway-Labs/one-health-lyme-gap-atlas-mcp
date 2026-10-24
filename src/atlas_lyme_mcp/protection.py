@@ -12,7 +12,7 @@ from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from atlas_lyme_mcp.application.client import REQUEST_ID, TRACEPARENT
-from atlas_lyme_mcp.application.mcp_tracing import ingress_rejection_span
+from atlas_lyme_mcp.application.mcp_tracing import IngressCause, ingress_rejection_span
 from atlas_lyme_mcp.application.telemetry import record
 
 
@@ -54,6 +54,7 @@ class PublicProtection:
                 if q is not None:
                     while q and q[0] <= now - 60:
                         q.popleft()
+            ingress_cause: IngressCause | None
             if self.active >= 8:
                 ingress_cause = "active_mcp_requests"
             elif queue is None:
