@@ -5,6 +5,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import uvicorn
+from lyme_gap_atlas_shared.observability import configure_tracing, flush_tracing, shutdown_tracing
 from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
@@ -71,7 +72,12 @@ def create_app(settings: Settings | None = None) -> Starlette:
 def main() -> None:
     """Start one HTTP process when invoked as a command."""
     settings = Settings.from_env()
-    uvicorn.run(create_app(settings), host=settings.host, port=settings.port)
+    configure_tracing("atlas-lyme-mcp")
+    try:
+        uvicorn.run(create_app(settings), host=settings.host, port=settings.port)
+    finally:
+        flush_tracing()
+        shutdown_tracing()
 
 
 if __name__ == "__main__":

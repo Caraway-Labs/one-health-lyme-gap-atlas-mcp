@@ -32,3 +32,10 @@ services:
       - key: MCP_ALLOWED_HOSTS
         value: "oh-lyme-mcp-dev-7jcfi.ondigitalocean.app,oh-lyme-mcp-dev-7jcfi.ondigitalocean.app:443,mcp.onehealthatlas.org,mcp.onehealthatlas.org:443"
         scope: RUN_TIME
+      - key: OTEL_EXPORTER_OTLP_ENDPOINT
+        value: https://otel.carawaylabs.com/v1/traces
+        scope: RUN_TIME
+      - key: OTEL_EXPORTER_OTLP_HEADERS
+        value: EV[OTEL_EXPORTER_OTLP_HEADERS:SECRET]
+        scope: RUN_TIME
+        type: SECRET

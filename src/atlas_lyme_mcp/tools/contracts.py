@@ -11,6 +11,7 @@ from mcp.server.mcpserver.utilities.func_metadata import ArgModelBase, FuncMetad
 from mcp_types import CallToolResult
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 
+from atlas_lyme_mcp.application.mcp_tracing import tool_span
 from atlas_lyme_mcp.application.telemetry import record
 
 Identifier = Annotated[
@@ -83,30 +84,36 @@ class StrictMetadata(FuncMetadata):
     ) -> Any:
         started = time.monotonic()
         outcome, reason = "OK", "completed"
-        try:
-            result = await super().call_fn(fn, fn_is_async, arguments, arguments_to_pass_directly)
-            if isinstance(result, CallToolResult) and result.is_error:
-                payload = result.structured_content or {}
-                outcome = str(payload.get("code", "UNEXPECTED_ERROR"))
-                reason = str(payload.get("reason", "retrieval_failed"))
-            return result
-        except asyncio.CancelledError:
-            outcome, reason = "CANCELLED", "cancelled"
-            raise
-        except Exception:
-            outcome, reason = "UNEXPECTED_ERROR", "unexpected_error"
-            raise
-        finally:
-            duration_ms = int((time.monotonic() - started) * 1000)
-            if outcome == "OK" and duration_ms > 20000:
-                outcome, reason = "LATE_COMPLETION", "tool_deadline"
-            record(
-                "mcp_tool",
-                self.tool_name,
-                outcome,
-                reason,
-                duration_ms,
-            )
+        with tool_span(self.tool_name) as span_state:
+            try:
+                result = await super().call_fn(
+                    fn, fn_is_async, arguments, arguments_to_pass_directly
+                )
+                if isinstance(result, CallToolResult) and result.is_error:
+                    payload = result.structured_content or {}
+                    outcome = str(payload.get("code", "UNEXPECTED_ERROR"))
+                    reason = str(payload.get("reason", "retrieval_failed"))
+                return result
+            except asyncio.CancelledError:
+                outcome, reason = "CANCELLED", "cancelled"
+                raise
+            except Exception:
+                outcome, reason = "UNEXPECTED_ERROR", "unexpected_error"
+                raise
+            finally:
+                duration_ms = int((time.monotonic() - started) * 1000)
+                if outcome == "OK" and duration_ms > 20000:
+                    outcome, reason = "LATE_COMPLETION", "tool_deadline"
+                span_state["outcome"] = outcome
+                span_state["reason"] = reason
+                span_state["retryable"] = "true" if outcome == "RATE_LIMITED" else "false"
+                record(
+                    "mcp_tool",
+                    self.tool_name,
+                    outcome,
+                    reason,
+                    duration_ms,
+                )
 
     def pre_parse_json(self, data: dict[str, Any]) -> dict[str, Any]:
         """Typed MCP arguments must not accept JSON encoded inside strings."""
